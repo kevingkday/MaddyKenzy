@@ -1,0 +1,11 @@
+[
+  {
+    "slug": "itsy-big-show",
+    "title": "Itsy's Big Show",
+    "description": "Climb the water spout with Itsy the spider! Tap letters, hear sounds, and watch the mini-show.",
+    "path": "games/itsy-big-show/",
+    "icon": "games/itsy-big-show/icon-192.png",
+    "accent": "#6b3fd1",
+    "tags": ["Letters", "Music", "Offline PWA"]
+  }
+]
