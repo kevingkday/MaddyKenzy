@@ -8,6 +8,7 @@ import http from 'node:http';
 import path from 'node:path';
 import { chromium } from 'playwright';
 
+for (const k of ['SITE_URL', 'INTERNAL_TOKEN']) if (!process.env[k]) { console.log(`Missing GitHub secret ${k}. Add it under Settings -> Secrets and variables -> Actions.`); process.exit(1); }
 const FAMILY = process.env.FAMILY, GAME = process.env.GAME || 'itsy-big-show', MODE = process.env.MODE || 'all';
 const MAX = +(process.env.MAX_CLIPS || 800), KEY = process.env.ELEVENLABS_API_KEY;
 const MODEL = process.env.ELEVENLABS_MODEL || 'eleven_multilingual_v2';

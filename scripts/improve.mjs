@@ -7,6 +7,7 @@
 import fs from 'node:fs';
 import { execSync } from 'node:child_process';
 
+for (const k of ['SITE_URL', 'INTERNAL_TOKEN']) if (!process.env[k]) { console.log(`Missing GitHub secret ${k}. Add it under Settings -> Secrets and variables -> Actions.`); process.exit(1); }
 const out = (k, v) => { if (process.env.GITHUB_OUTPUT) fs.appendFileSync(process.env.GITHUB_OUTPUT, `${k}=${v}\n`); };
 const GAME = process.env.GAME, FAMILY = process.env.FAMILY, RUN = process.env.RUN || '';
 for (const v of [GAME, FAMILY]) if (!/^[a-z0-9-]{1,40}$/.test(v || '')) throw new Error('bad game/family');
