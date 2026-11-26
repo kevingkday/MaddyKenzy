@@ -356,6 +356,8 @@ button{font:inherit;color:inherit;border:0;cursor:pointer;touch-action:manipulat
   <div class="gcard"><h3>How it's learning</h3><p style="margin:4px 0 10px">Each change you apply is measured against the version before it. From those results the improver rewrites its own playbook (the rules it follows when it suggests changes), and you approve that too.</p>
    <div id="learn"><p>Enter your PIN above to see the scorecard and playbook.</p></div>
    <div class="grow" style="margin-top:10px"><button class="pill soft" id="rethink">🧠 Rethink the playbook now</button></div><p class="status" id="lStatus"></p></div>
+  <div class="gcard"><h3>This device</h3><p id="devState" style="margin:4px 0 10px"></p>
+   <div class="grow"><label>Link code <input id="linkCode" autocomplete="off" autocapitalize="characters" placeholder="ABCD-1234"></label><button class="pill soft" id="linkBtn">Link to our family</button></div><p class="status" id="linkStatus"></p></div>
   <div class="gcard"><h3>Voice</h3><p style="margin:4px 0 10px">Lines with a recording play in Dad's voice. Anything without one yet uses the iPad voice and gets added automatically on the next nightly run.</p>
    <div class="grow"><button class="pill soft" id="voiceToggle"></button><button class="pill soft" id="voiceSample">▶ Play samples</button></div><p class="status" id="vStatus"></p></div>
   <div class="gcard"><h3>Play timer</h3><p style="margin:4px 0 10px">When time is up, Itsy sings goodbye and the game rests until a grown-up holds the button.</p>
@@ -389,6 +391,9 @@ button{font:inherit;color:inherit;border:0;cursor:pointer;touch-action:manipulat
 
 <script>
 {
+/* a kid device linked to a family (parent dashboard -> "Link a device") sends its token with our own requests */
+let DEV=null;try{DEV=localStorage.getItem('itsydev')}catch(e){}
+{const _f=window.fetch.bind(window);window.fetch=(u,o={})=>{if(DEV&&typeof u==='string'&&/^\/(api|audio)\//.test(u)){o={...o,headers:{...(o.headers||{}),'x-device':DEV}}}return _f(u,o)}}
 const DEFAULT_CFG=/*CFG*/{"version":1,"round_length":3,"song_chance":0.35,"bubble_round":8,"bubble_ms":900,"say_round":3,"rewards":{"song":3,"sticker":3,"confetti":2},"boredom":{"idle_seconds":8,"rapid_taps":6},"activities":[{"id":"bubbles","title":"Bubble Pop","glyph":"🫧","color":"#2f9be0","enabled":true,"weight":1.3},{"id":"say","title":"Say It!","glyph":"♪ ah!","color":"#f5a300","enabled":true,"weight":1.1},{"id":"seq","title":"Spider Climb","glyph":"1 2 ?","color":"#6b3fd1","enabled":true,"weight":1},{"id":"bugs","title":"Ladybug Friends","glyph":"4+1","color":"#ff6b4a","enabled":true,"weight":1},{"id":"letters","title":"Letter Sounds","glyph":"Aa","color":"#14a874","enabled":true,"weight":1},{"id":"board","title":"ABC Board","glyph":"ABC","color":"#ff4f9a","enabled":true,"weight":0.9},{"id":"sing","title":"Sing with Itsy","glyph":"♪ ♫","color":"#b14fd8","enabled":true,"weight":0.8}],"bubble_mix":{"words":0.7,"letters":0.15,"numbers":0.15},"bubble_words":[{"w":"cat","e":"🐱"},{"w":"dog","e":"🐶"},{"w":"ball","e":"⚽"},{"w":"car","e":"🚗"},{"w":"fish","e":"🐟"},{"w":"bear","e":"🧸"},{"w":"apple","e":"🍎"},{"w":"star","e":"⭐"},{"w":"duck","e":"🦆"},{"w":"moon","e":"🌙"},{"w":"bunny","e":"🐰"},{"w":"cake","e":"🎂"},{"w":"bus","e":"🚌"},{"w":"frog","e":"🐸"},{"w":"banana","e":"🍌"},{"w":"baby","e":"👶"}],"say_prompts":[{"w":"ma","e":"👩"},{"w":"ba","e":"⚽"},{"w":"moo","e":"🐮"},{"w":"baa","e":"🐑"},{"w":"woof","e":"🐶"},{"w":"meow","e":"🐱"},{"w":"up","e":"⬆️"},{"w":"bye","e":"👋"},{"w":"wow","e":"🤩"},{"w":"oh","e":"😮"}],"stickers":["🦄","🐶","🐱","🐼","🐸","🦋","🐢","🐙","🦊","🐧","🐳","🌈","🍓","🚀","🎈","🌻"]}/*END*/;
 let CFG=DEFAULT_CFG;
 const GAME='itsy-big-show';
@@ -874,14 +879,15 @@ async function notes(){
  const box=$('#ver'),sg=$('#sugg');
  if(!$('#pin').value.trim()){sg.innerHTML='';box.innerHTML=`<p style="margin:6px 0 0">Version ${CFG.version}${CFG.pending?' · <b>a suggestion is waiting</b>':''}. Enter your PIN to see suggestions and notes.</p>`;return}
  try{const j=await grown('/api/notes');
-  sg.innerHTML=j.pending?`<div style="background:#fff7d6;border-radius:16px;padding:14px 16px;margin:8px 0"><h3 style="margin-top:0">Suggested changes (v${j.pending.version})</h3><div style="white-space:pre-wrap">${esc(j.pending.notes_private||j.pending.changelog)}</div>
+  if(j.locked){sg.innerHTML=`<p style="margin:8px 0">🔒 Private mode: suggestions and notes open only in the parent dashboard (<b>${location.origin}/app</b>), after you unlock them with your passphrase.${j.pending?' A suggestion is waiting there.':''}</p>`}
+  else sg.innerHTML=j.pending?`<div style="background:#fff7d6;border-radius:16px;padding:14px 16px;margin:8px 0"><h3 style="margin-top:0">Suggested changes (v${j.pending.version})</h3><div style="white-space:pre-wrap">${esc(j.pending.notes_private||j.pending.changelog)}</div>
    <div class="grow" style="margin-top:12px"><button class="pill" id="apply" data-v="${j.pending.version}">✅ Apply these changes</button><button class="pill soft" id="dismiss" data-v="${j.pending.version}">Not now</button></div></div>`
    :`<p style="margin:8px 0">No suggestion waiting. ${j.newEvents} new play events since the last review.</p>`;
   const V={helped:'✅ Helped',hurt:'⚠️ Hurt',mixed:'↔️ Mixed',no_change:'➖ No change',too_early:'⏳ Too early'};
   $('#learn').innerHTML=`<h3 style="margin-top:4px">Scorecard</h3>`+(j.outcomes.length?j.outcomes.map(o=>`<p style="margin:6px 0"><b>v${o.version}</b> vs v${o.baseline}: <b>${V[o.verdict]||esc(o.verdict)}</b><br><span style="opacity:.8">${esc(o.summary)}</span></p>`).join(''):'<p>No applied changes measured yet. Results appear after a change has been live for a few play sessions.</p>')
-   +(j.playbookPending?`<div style="background:#eef6ff;border-radius:16px;padding:14px 16px;margin:10px 0"><h3 style="margin-top:0">The improver wants to update its playbook (v${j.playbookPending.version})</h3><p style="white-space:pre-wrap;margin:0 0 8px">${esc(j.playbookPending.rationale)}</p><div style="white-space:pre-wrap;font-size:16px;background:#fff;border-radius:12px;padding:10px 12px">${esc(j.playbookPending.content)}</div>
+   +(j.locked?'<p>🔒 Playbook and notes are in the parent dashboard.</p>':'')+(j.playbookPending&&!j.locked?`<div style="background:#eef6ff;border-radius:16px;padding:14px 16px;margin:10px 0"><h3 style="margin-top:0">The improver wants to update its playbook (v${j.playbookPending.version})</h3><p style="white-space:pre-wrap;margin:0 0 8px">${esc(j.playbookPending.rationale)}</p><div style="white-space:pre-wrap;font-size:16px;background:#fff;border-radius:12px;padding:10px 12px">${esc(j.playbookPending.content)}</div>
      <div class="grow" style="margin-top:12px"><button class="pill" id="pbApply" data-v="${j.playbookPending.version}">✅ Use the new playbook</button><button class="pill soft" id="pbDismiss" data-v="${j.playbookPending.version}">Keep the current one</button></div></div>`:'')
-   +(j.playbook?`<details style="margin-top:8px"><summary><b>Current playbook (v${j.playbook.version})</b></summary><div style="white-space:pre-wrap;margin:6px 0 0 1em;font-size:16px">${esc(j.playbook.content)}</div></details>`:'');
+   +(j.playbook&&!j.locked?`<details style="margin-top:8px"><summary><b>Current playbook (v${j.playbook.version})</b></summary><div style="white-space:pre-wrap;margin:6px 0 0 1em;font-size:16px">${esc(j.playbook.content)}</div></details>`:'');
   box.innerHTML=`<h3>History (private)</h3>`+j.history.map(v=>`<details style="margin:6px 0"><summary><b>v${v.version}${v.version===j.active?' (live)':''}${v.undone?' (undone)':''}</b>: ${esc(v.changelog)}</summary>${v.notes_private?`<div style="white-space:pre-wrap;margin:6px 0 0 1em">${esc(v.notes_private)}</div>`:''}</details>`).join('');
  }catch(e){sg.innerHTML='';box.innerHTML=`<p style="margin:6px 0 0">${esc(e.message)}</p>`}
 }
@@ -900,6 +906,15 @@ $('#rethink').addEventListener('click',async()=>{const st=$('#lStatus');try{cons
   if(r.status==='queued'||r.status==='running'){setTimeout(tick,15000);return}st.textContent=r.status==='done'?'Playbook update ready below.':(r.message||'No update this time.');notes()};tick()}catch(e){st.textContent=e.message}});
 $('#undo').addEventListener('click',async()=>{const st=$('#gStatus');try{const j=await grown('/api/undo');await reloadCfg();st.textContent=j.changed?`Undone. Back on version ${j.version}.`:'Nothing to undo.';notes()}catch(e){st.textContent=e.message}});
 $('#pin').addEventListener('change',notes);
+function devState(){$('#devState').textContent=DEV?'This device is linked to your family. Its play goes to your family\'s game.':'Not linked yet. In the parent dashboard, tap "Link a device" and enter the code here (or scan its QR code).'}
+async function linkDevice(code){const st=$('#linkStatus');try{const r=await fetch('/api/device/link',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({code})});const j=await r.json();
+ if(!r.ok)throw new Error(j.error||'Could not link.');DEV=j.token;try{localStorage.setItem('itsydev',DEV)}catch(e){}
+ try{['itsycfg','itsykids','itsyq','itsylog','itsy2'].forEach(k=>localStorage.removeItem(k))}catch(e){}
+ if(st)st.textContent='Linked! Loading your family\'s game…';setTimeout(()=>location.replace(location.pathname),600)}catch(e){if(st)st.textContent=e.message;else alertBox(e.message)}}
+function alertBox(m){const d=document.createElement('div');d.style.cssText='position:fixed;left:50%;top:20px;transform:translateX(-50%);background:#fff;padding:14px 20px;border-radius:16px;z-index:300;box-shadow:0 6px 20px #0003;font-size:18px';d.textContent=m;document.body.appendChild(d);setTimeout(()=>d.remove(),5000)}
+$('#linkBtn').addEventListener('click',()=>linkDevice($('#linkCode').value));
+{const q=new URLSearchParams(location.search).get('link');if(q)linkDevice(q)}
+devState();
 function voiceBtn(){$('#voiceToggle').textContent=S.voiceOn===false?"Use Dad's voice: off":"Use Dad's voice: on"}
 $('#voiceToggle').addEventListener('click',()=>{S.voiceOn=S.voiceOn===false;persist();voiceBtn()});
 $('#voiceSample').addEventListener('click',async()=>{const st=$('#vStatus');if(!CFG.voice){st.textContent='No voice set up for this family yet.';return}
@@ -908,15 +923,16 @@ voiceBtn();
 
 /* ---------- who's playing ---------- */
 let KIDS=load('itsykids',[]);
-fetch('/api/children',{cache:'no-store'}).then(r=>r.ok?r.json():null).then(j=>{if(j&&Array.isArray(j.children)){KIDS=j.children;put('itsykids',KIDS)}}).catch(()=>{});
+const kidsReady=fetch('/api/children',{cache:'no-store'}).then(r=>r.ok?r.json():null).then(j=>{if(j&&Array.isArray(j.children)){KIDS=j.children;put('itsykids',KIDS)}}).catch(()=>{});
 const KCOL=['#ff4f9a','#2f9be0','#14a874','#f5a300'];
-function whoNext(){
+async function whoNext(){
+ await Promise.race([kidsReady,wait(1500)]);
  if(KIDS.length<2){if(KIDS[0])S.child=KIDS[0].id;renderHome();show('home');return}
- $('#kids').innerHTML=KIDS.map((k,i)=>`<button class="kid" data-id="${esc(k.id)}" style="background:${KCOL[i%4]}"><b>${esc(k.display_name[0])}</b><span>${esc(k.display_name)}</span></button>`).join('');
+ $('#kids').innerHTML=KIDS.map((k,i)=>`<button class="kid" data-id="${esc(k.id)}" style="background:${KCOL[i%4]}"><b>${esc(k.label||k.display_name[0])}</b><span>${k.display_name&&k.display_name!==k.label?esc(k.display_name):'&nbsp;'}</span></button>`).join('');
  show('who');say("Who's playing?");
 }
 $('#kids').addEventListener('click',e=>{const b=e.target.closest('.kid');if(!b)return;S.child=b.dataset.id;persist();const k=KIDS.find(x=>x.id===S.child);
- yay();track('child',{who:S.child});say(`Hi ${k?k.display_name:''}!`);renderHome();show('home')});
+ yay();track('child',{who:S.child});say(k&&k.display_name&&k.display_name!==k.label?`Hi ${k.display_name}!`:'Hi!');renderHome();show('home')});
 
 /* ---------- intro + start ---------- */
 const beams=$('#beams'),BC=['#ff4f9a','#ffd23f','#8fdcff','#58c96a','#ff6b4a','#b18cff','#ffffff'];

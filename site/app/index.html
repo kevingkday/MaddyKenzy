@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Parent dashboard</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/* VOICE: calm, trustworthy companion to a playful kids' game
+   IDEA: the grown-ups' side of the garden: same purple and sun, quieter
+   PICTURE: Itsy at the top; the family's game card and waiting suggestion are the focus
+   COLOUR and TYPE: page #f6f4ff, ink #1d1540, purple #6b3fd1, pink #ff4f9a, sun #ffd23f; Baloo 2 headings, Inter body
+   LAYOUT: one column of cards, max 760px, big touch targets */
+:root{color-scheme:light;--bg:#f6f4ff;--ink:#1d1540;--purple:#6b3fd1;--pink:#ff4f9a;--sun:#ffd23f;--soft:#e9e4ff}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Inter,system-ui,sans-serif}
+.wrap{max-width:760px;margin:0 auto;padding:max(20px,env(safe-area-inset-top)) 16px 60px}
+header{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+header svg{width:52px;height:52px;flex:none}
+h1{font:800 clamp(28px,6vw,40px)/1.05 'Baloo 2',sans-serif;margin:0}
+h2{font:800 24px/1.15 'Baloo 2',sans-serif;margin:0 0 6px;color:var(--purple)}
+h3{font:800 19px/1.2 'Baloo 2',sans-serif;margin:12px 0 4px}
+.card{background:#fff;border-radius:20px;padding:18px 20px;margin:0 0 14px;box-shadow:0 3px 0 #0001}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+button,.btn{font:600 17px/1 Inter,system-ui,sans-serif;border:0;border-radius:999px;padding:13px 22px;min-height:46px;cursor:pointer;background:var(--purple);color:#fff;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+button.soft,.btn.soft{background:var(--soft);color:var(--ink)}
+button.warn{background:#c62a4b}
+button:disabled{opacity:.5}
+input,textarea,select{font:16px/1.4 Inter,system-ui,sans-serif;width:100%;padding:11px 13px;border:2px solid #d9d2f5;border-radius:12px;background:#fff;color:var(--ink)}
+input:focus,textarea:focus,button:focus-visible{outline:3px solid var(--sun);outline-offset:1px}
+label{display:block;font-weight:600;margin:12px 0 4px}
+.hint{font-size:14px;opacity:.75;margin:4px 0 0}
+.kid{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr) minmax(0,1fr);gap:8px;margin:8px 0 0}
+.kid textarea{grid-column:1/-1}
+.badge{display:inline-block;background:var(--soft);border-radius:999px;padding:4px 12px;font-size:14px;font-weight:600}
+.dot{display:inline-grid;place-items:center;width:44px;height:44px;border-radius:50%;color:#fff;font:800 22px/1 'Baloo 2',sans-serif;margin-right:8px}
+.status{font-weight:600;color:var(--purple);min-height:1.4em;margin:8px 0 0}
+.err{color:#c62a4b}
+.pending{background:#fff7d6;border-radius:16px;padding:14px 16px;margin:10px 0}
+.pb{background:#eef6ff;border-radius:16px;padding:14px 16px;margin:10px 0}
+.pre{white-space:pre-wrap}
+.code{font:800 clamp(36px,9vw,52px)/1 'Baloo 2',sans-serif;letter-spacing:.06em;color:var(--purple)}
+#qr{background:#fff;padding:10px;display:inline-block;border-radius:12px}
+.radio{display:flex;gap:10px;align-items:flex-start;border:2px solid #d9d2f5;border-radius:14px;padding:12px;margin:8px 0;cursor:pointer}
+.radio input{width:auto;margin-top:4px}
+.radio.sel{border-color:var(--purple);background:#faf8ff}
+details summary{cursor:pointer;font-weight:600}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+ <header>
+  <svg viewBox="0 0 120 120" aria-hidden="true"><g fill="none" stroke="#3a1f86" stroke-width="6" stroke-linecap="round"><path d="M36 64Q16 46 6 58"/><path d="M33 72Q10 66 3 80"/><path d="M34 81Q13 88 9 104"/><path d="M84 64Q104 46 114 58"/><path d="M87 72Q110 66 117 80"/><path d="M86 81Q107 88 111 104"/></g><ellipse cx="60" cy="72" rx="31" ry="27" fill="#6b3fd1"/><circle cx="48" cy="66" r="10" fill="#fff"/><circle cx="72" cy="66" r="10" fill="#fff"/><circle cx="50" cy="68" r="5.5" fill="#1d1540"/><circle cx="74" cy="68" r="5.5" fill="#1d1540"/><path d="M51 83Q60 92 69 83" fill="none" stroke="#1d1540" stroke-width="3.5" stroke-linecap="round"/></svg>
+  <div><h1 id="title">Parent dashboard</h1><div class="hint">Self-improving games for your kids · beta</div></div>
+ </header>
+ <main id="main"><div class="card">Loading…</div></main>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+{
+const $=s=>document.querySelector(s), main=$('#main'), GAME='itsy-big-show';
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+async function api(path,body,method){
+ const r=await fetch(path,{method:method||(body?'POST':'GET'),headers:{'content-type':'application/json'},body:body?JSON.stringify(body):undefined,credentials:'same-origin'});
+ const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||`Something went wrong (${r.status}).`);return j;
+}
+
+/* ---- private mode: the family key is unlocked here with the parent's passphrase and never stored ---- */
+const te=new TextEncoder(),td=new TextDecoder();
+const b64=u=>{let s='';u.forEach(x=>s+=String.fromCharCode(x));return btoa(s)},unb64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+async function passKey(pass,salt){const base=await crypto.subtle.importKey('raw',te.encode(pass),'PBKDF2',false,['deriveKey']);
+ return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:310000,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,['encrypt','decrypt'])}
+async function seal(key,bytes){const iv=crypto.getRandomValues(new Uint8Array(12));return `enc:v1:${b64(iv)}:${b64(new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},key,bytes)))}`}
+async function openSealed(key,s){const[, ,iv,ct]=s.split(':');return new Uint8Array(await crypto.subtle.decrypt({name:'AES-GCM',iv:unb64(iv)},key,unb64(ct)))}
+let DEK=null,DEKKEY=null; // memory only
+async function useDek(raw){DEK=b64(raw);DEKKEY=await crypto.subtle.importKey('raw',raw,'AES-GCM',false,['decrypt'])}
+const show=async s=>(typeof s==='string'&&s.startsWith('enc:v1:'))?(DEKKEY?td.decode(await openSealed(DEKKEY,s).catch(()=>te.encode('?'))):'🔒'):s;
+
+/* ---- boot ---- */
+async function boot(){
+ const t=new URLSearchParams(location.search).get('t');
+ if(t){history.replaceState(null,'','/app/');try{await api('/api/auth/redeem',{token:t})}catch(e){return signedOut(e.message)}}
+ const me=await api('/api/auth/me').catch(()=>({user:null}));
+ if(!me.user)return signedOut();
+ if(!me.family)return onboard();
+ dashboard();
+}
+function signedOut(msg){
+ main.innerHTML=`<div class="card"><h2>Invite-only beta</h2>${msg?`<p class="err">${esc(msg)}</p>`:''}<p>This dashboard is for families in the beta. Open the invite or sign-in link you were sent. Links work once and expire, so if yours has, ask for a new one.</p><p>Already set up on another device? There, choose <b>Sign in on another device</b> to get a link for this one.</p></div>`;
+}
+
+/* ---- onboarding ---- */
+function kidRow(i){return `<div class="kid" data-k="${i}"><input placeholder="First name" data-f="name" aria-label="Child's first name"><input placeholder="Picker letter or emoji" data-f="label" maxlength="4" aria-label="Picker letter or emoji"><input placeholder="Age" data-f="age" inputmode="numeric" aria-label="Age"><textarea rows="3" data-f="profile" placeholder="What are they like? What do they love, what's hard, how do they communicate? (private, encrypted)"></textarea></div>`}
+function onboard(){
+ main.innerHTML=`<div class="card"><h2>Create your family's game</h2><p>Tell us about your kids. Claude reads this to tailor the game, then keeps improving it from how they actually play. Everything you write here is encrypted.</p>
+  <label for="fname">Family name</label><input id="fname" placeholder="e.g. The Parkers">
+  <h3>Your kids</h3><div id="kids">${kidRow(0)}</div><button class="soft" id="addKid" style="margin-top:8px">+ Add another child</button>
+  <label for="goals">What should the game help with?</label><textarea id="goals" rows="4" placeholder="e.g. letter sounds, counting to 20, saying more words, staying focused longer (private, encrypted)"></textarea>
+  <label for="photo">A school newsletter or learning goals photo (optional)</label><input id="photo" type="file" accept="image/*"><p class="hint">Claude reads it once to pick up what they're learning in class. The photo itself isn't stored.</p>
+  <label for="pin">Grown-ups PIN for the kids' devices</label><input id="pin" inputmode="numeric" placeholder="4 to 8 digits" autocomplete="new-password">
+  <h3>Privacy</h3>
+  <label class="radio sel"><input type="radio" name="mode" value="standard" checked><span><b>Standard (recommended):</b> encrypted with your family's own key, stored separately from the database. Reviews run automatically every night.</span></label>
+  <label class="radio"><input type="radio" name="mode" value="private"><span><b>Private mode:</b> locked with a passphrase only you know. Not even the site owner can open your notes. No automatic nightly reviews: you start each review here. <b>If you forget the passphrase, your notes can't be recovered.</b></span></label>
+  <div id="passBox" hidden><label for="pass">Passphrase</label><input id="pass" type="password" autocomplete="new-password" placeholder="at least 12 characters"><label for="pass2">Again</label><input id="pass2" type="password" autocomplete="new-password"></div>
+  <div class="row" style="margin-top:16px"><button id="create">Create our game</button></div><p class="status" id="st"></p></div>`;
+ let n=1;$('#addKid').onclick=()=>{if(n<6)$('#kids').insertAdjacentHTML('beforeend',kidRow(n++))};
+ main.querySelectorAll('input[name=mode]').forEach(r=>r.onchange=()=>{main.querySelectorAll('.radio').forEach(l=>l.classList.toggle('sel',l.querySelector('input').checked));$('#passBox').hidden=r.value!=='private'||!r.checked});
+ $('#create').onclick=create;
+}
+async function shrink(file){if(!file)return null;const img=await createImageBitmap(file);const s=Math.min(1,1600/Math.max(img.width,img.height));const c=document.createElement('canvas');c.width=img.width*s;c.height=img.height*s;c.getContext('2d').drawImage(img,0,0,c.width,c.height);return c.toDataURL('image/jpeg',.82).split(',')[1]}
+async function create(){
+ const st=$('#st'),btn=$('#create');
+ const children=[...main.querySelectorAll('.kid')].map(r=>Object.fromEntries([...r.querySelectorAll('[data-f]')].map(i=>[i.dataset.f,i.value.trim()]))).filter(k=>k.name);
+ const body={name:$('#fname').value.trim(),children,goals:$('#goals').value.trim(),pin:$('#pin').value.trim(),game:GAME};
+ if(!body.name||!children.length)return st.textContent='Add a family name and at least one child.';
+ if(!/^\d{4,8}$/.test(body.pin))return st.textContent='The PIN should be 4 to 8 digits.';
+ const priv=main.querySelector('input[name=mode]:checked').value==='private';
+ if(priv){const p=$('#pass').value;if(p.length<12)return st.textContent='Use a passphrase of at least 12 characters.';if(p!==$('#pass2').value)return st.textContent="The passphrases don't match.";
+  st.textContent='Locking your family key…';const dek=crypto.getRandomValues(new Uint8Array(32)),salt=crypto.getRandomValues(new Uint8Array(16));
+  body.private={dek:b64(dek),wrapped:await seal(await passKey(p,salt),dek),salt:b64(salt)};await useDek(dek)}
+ try{body.image=await shrink($('#photo').files[0])}catch(e){body.image=null}
+ btn.disabled=true;st.textContent='Creating your game: Claude is reading your notes. This takes about a minute…';
+ try{const j=await api('/api/family',body);main.innerHTML=`<div class="card"><h2>Your game is ready 🎉</h2><p class="pre">${esc(j.notes)}</p><button id="go">Go to the dashboard</button></div>`;$('#go').onclick=dashboard}
+ catch(e){st.innerHTML=`<span class="err">${esc(e.message)}</span>`;btn.disabled=false}
+}
+
+/* ---- dashboard ---- */
+let FAM=null;
+async function dashboard(){
+ FAM=await api('/api/family');const f=FAM.family;
+ if(f.private_mode&&!DEKKEY)return unlock();
+ const name=await show(f.name);$('#title').textContent=name||'Parent dashboard';
+ const kids=[];for(const k of FAM.children)kids.push({...k,name:await show(k.name),profile:await show(k.profile)});
+ const COL=['#ff4f9a','#2f9be0','#14a874','#f5a300'];
+ main.innerHTML=`
+ <div class="card"><h2>${esc(name)}</h2><div>${kids.map((k,i)=>`<div class="row" style="margin:6px 0"><span class="dot" style="background:${COL[i%4]}">${esc(k.label)}</span><span><b>${esc(k.name)}</b>${k.age?`, ${k.age}`:''}</span></div>`).join('')}</div>
+  <p style="margin:10px 0 0"><span class="badge">${f.private_mode?'🔒 Private mode: locked with your passphrase':'🔐 Encrypted with your family key'}</span></p>
+  <div class="row" style="margin-top:12px"><a class="btn" href="/games/${GAME}/">▶ Play the game here</a></div></div>
+ <div class="card"><h2>Suggestions & notes</h2><div id="notes">Loading…</div>
+  <div class="row" style="margin-top:12px"><button class="soft" id="review">🔍 Review recent play</button><button class="soft" id="undo">↩ Undo last change</button></div><p class="status" id="nst"></p></div>
+ <div class="card"><h2>How it's learning</h2><div id="learn"></div><div class="row" style="margin-top:12px"><button class="soft" id="rethink">🧠 Rethink the playbook now</button></div><p class="status" id="lst"></p></div>
+ <div class="card"><h2>Kids' devices</h2><p>Link each iPad or iPhone the kids play on. Their play then counts toward your family's game.</p>
+  <div class="row"><button id="link">Link a device</button></div><div id="linkOut"></div>
+  ${FAM.devices.length?`<h3>Linked</h3>${FAM.devices.map(d=>`<p class="hint">${esc(d.label||'Device')} · linked ${new Date(d.created_at*1000).toLocaleDateString()}</p>`).join('')}`:''}</div>
+ <div class="card"><h2>Your account</h2><div class="row"><button class="soft" id="login">Sign in on another device</button><a class="btn soft" href="/api/family/export">Download our data</a><button class="soft" id="out">Sign out</button></div><div id="loginOut"></div>
+  ${FAM.role==='admin'?`<h3>Invite a family (admin)</h3><div class="row"><button class="soft" id="invite">Make an invite link</button></div><div id="inviteOut"></div>`:''}
+  <details style="margin-top:14px"><summary>Delete our family</summary><p>This permanently erases your kids' profiles, notes, play history, game versions and devices. It can't be undone.</p><input id="del" placeholder="Type DELETE"><div class="row" style="margin-top:8px"><button class="warn" id="delBtn">Delete everything</button></div></details></div>`;
+ $('#review').onclick=()=>startReview('review','#nst');$('#rethink').onclick=()=>startReview('meta','#lst');
+ $('#undo').onclick=async()=>{try{const j=await api('/api/undo',{game:GAME});$('#nst').textContent=j.changed?`Undone. Back on version ${j.version}.`:'Nothing to undo.';notes()}catch(e){$('#nst').textContent=e.message}};
+ $('#link').onclick=async()=>{const j=await api('/api/device/code',{});$('#linkOut').innerHTML=`<p>On the kid's device, scan this or open <b>${esc(location.host)}/games/${GAME}/</b>, then go to Grown-ups (hold the ★) → <b>This device</b> and enter:</p><div class="code">${esc(j.code)}</div><div id="qr"></div><p class="hint">Works once, for 15 minutes.</p>`;try{new QRCode($('#qr'),{text:j.url,width:180,height:180})}catch(e){}};
+ $('#login').onclick=async()=>{const j=await api('/api/auth/link',{kind:'login'});$('#loginOut').innerHTML=`<p>Open this on your other device within 30 minutes (works once):</p><div id="qr2"></div><p class="hint" style="word-break:break-all">${esc(j.url)}</p><button class="soft" id="cp">Copy link</button>`;try{new QRCode($('#qr2'),{text:j.url,width:160,height:160})}catch(e){}$('#cp').onclick=()=>navigator.clipboard.writeText(j.url).then(()=>$('#cp').textContent='Copied')};
+ $('#out').onclick=async()=>{await api('/api/auth/logout',{});location.replace('/app/')};
+ if($('#invite'))$('#invite').onclick=async()=>{const j=await api('/api/auth/link',{kind:'invite'});$('#inviteOut').innerHTML=`<p>Send this to the family (works once, for 14 days):</p><p class="hint" style="word-break:break-all">${esc(j.url)}</p><button class="soft" id="cp2">Copy link</button>`;$('#cp2').onclick=()=>navigator.clipboard.writeText(j.url).then(()=>$('#cp2').textContent='Copied')};
+ $('#delBtn').onclick=async()=>{try{await api('/api/family',{confirm:$('#del').value.trim()},'DELETE');main.innerHTML='<div class="card"><h2>Deleted</h2><p>Everything about your family has been erased.</p></div>'}catch(e){alertIn('#delBtn',e.message)}};
+ notes();
+}
+function alertIn(sel,m){const p=document.createElement('p');p.className='err';p.textContent=m;$(sel).after(p)}
+function unlock(){
+ main.innerHTML=`<div class="card"><h2>🔒 Unlock your family</h2><p>Your family is in private mode. Enter your passphrase to open your notes on this device. It's never sent to the server, and the unlocked key stays only in this tab.</p>
+  <label for="pp">Passphrase</label><input id="pp" type="password" autocomplete="current-password"><div class="row" style="margin-top:12px"><button id="ub">Unlock</button></div><p class="status" id="ust"></p></div>`;
+ const go=async()=>{const st=$('#ust');st.textContent='Unlocking…';
+  try{const f=FAM.family,key=await passKey($('#pp').value,unb64(f.pass_salt));await useDek(await openSealed(key,f.dek_pass_wrapped));dashboard()}
+  catch(e){DEK=DEKKEY=null;st.innerHTML='<span class="err">That passphrase didn\'t work.</span>'}};
+ $('#ub').onclick=go;$('#pp').onkeydown=e=>{if(e.key==='Enter')go()};
+}
+const V={helped:'✅ Helped',hurt:'⚠️ Hurt',mixed:'↔️ Mixed',no_change:'➖ No change',too_early:'⏳ Too early'};
+async function notes(){
+ try{const j=await api('/api/notes',{game:GAME,dek:DEK||undefined});
+  $('#notes').innerHTML=(j.pending?`<div class="pending"><h3 style="margin-top:0">Suggested changes (v${j.pending.version})</h3><div class="pre">${esc(j.pending.notes_private||j.pending.changelog)}</div><div class="row" style="margin-top:12px"><button data-a="apply" data-v="${j.pending.version}">✅ Apply these changes</button><button class="soft" data-a="dismiss" data-v="${j.pending.version}">Not now</button></div></div>`
+   :`<p>No suggestion waiting. ${j.newEvents} new play events since the last review.${FAM.family.private_mode?' In private mode, reviews run when you start them here.':' Reviews run automatically every night.'}</p>`)
+   +`<details><summary>History</summary>${j.history.map(v=>`<p style="margin:6px 0"><b>v${v.version}${v.version===j.active?' (live)':''}${v.undone?' (undone)':''}</b>: ${esc(v.changelog)}${v.notes_private?`<br><span class="pre hint">${esc(v.notes_private)}</span>`:''}</p>`).join('')}</details>`;
+  $('#learn').innerHTML=`<p>Each change you apply is measured against the version before it. From those results, Claude rewrites its own playbook (the rules it follows), and you approve that too.</p>`
+   +(j.outcomes.length?j.outcomes.map(o=>`<p style="margin:6px 0"><b>v${o.version}</b> vs v${o.baseline}: <b>${V[o.verdict]||esc(o.verdict)}</b><br><span class="hint">${esc(o.summary)}</span></p>`).join(''):'<p class="hint">No applied changes measured yet.</p>')
+   +(j.playbookPending?`<div class="pb"><h3 style="margin-top:0">Claude wants to update its playbook (v${j.playbookPending.version})</h3><p class="pre">${esc(j.playbookPending.rationale)}</p><div class="pre" style="background:#fff;border-radius:12px;padding:10px 12px">${esc(j.playbookPending.content)}</div><div class="row" style="margin-top:12px"><button data-a="apply" data-kind="playbook" data-v="${j.playbookPending.version}">✅ Use the new playbook</button><button class="soft" data-a="dismiss" data-kind="playbook" data-v="${j.playbookPending.version}">Keep the current one</button></div></div>`:'')
+   +(j.playbook?`<details><summary>Current playbook (v${j.playbook.version})</summary><div class="pre" style="margin-top:6px">${esc(j.playbook.content)}</div></details>`:'');
+ }catch(e){$('#notes').innerHTML=`<p class="err">${esc(e.message)}</p>`}
+}
+main.addEventListener('click',async e=>{const b=e.target.closest('[data-a]');if(!b)return;b.disabled=true;
+ try{await api(`/api/${b.dataset.a}`,{game:GAME,version:+b.dataset.v,kind:b.dataset.kind});$(b.dataset.kind?'#lst':'#nst').textContent=b.dataset.a==='apply'?(b.dataset.kind?'Claude will follow the new playbook from the next review.':`Applied. The kids' devices load version ${b.dataset.v} next time they open the game.`):'Okay, nothing changed.';notes()}
+ catch(err){b.disabled=false;$(b.dataset.kind?'#lst':'#nst').textContent=err.message}});
+async function startReview(kind,stSel){
+ const st=$(stSel);st.textContent=FAM.family.private_mode?'Reviewing here with your unlocked key… about a minute.':'Starting…';
+ try{const j=await api('/api/review',{game:GAME,kind,dek:DEK||undefined});
+  if(j.status){st.textContent=j.status==='done'?(kind==='meta'?'Playbook update ready below.':'Review ready.'):(j.message||'Nothing to suggest right now.');return notes()}
+  st.textContent='Reviewing… this takes a few minutes. You can leave this page.';
+  const tick=async()=>{const r=await api(`/api/status?game=${GAME}&run=${j.run}`).catch(()=>({}));if(r.status==='queued'||r.status==='running')return setTimeout(tick,15000);
+   st.textContent=r.status==='done'?(kind==='meta'?'Playbook update ready below.':'Review ready.'):(r.message||'Nothing to suggest right now.');notes()};tick();
+ }catch(e){st.textContent=e.message}
+}
+boot();
+}
+</script>
+</body>
+</html>

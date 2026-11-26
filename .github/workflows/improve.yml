@@ -43,7 +43,7 @@ jobs:
       - name: Check inputs
         if: env.MANUAL == 'true'
         run: |
-          [[ "$FAMILY" =~ ^[a-z0-9-]+$ && "$GAME" =~ ^[a-z0-9-]+$ && -f "site/games/$GAME/game.json" && -f "improvers/$GAME.md" ]] || { echo "Unknown family or game"; exit 1; }
+          [[ "$FAMILY" =~ ^[A-Za-z0-9_-]+$ && "$GAME" =~ ^[a-z0-9-]+$ && -f "site/games/$GAME/game.json" ]] || { echo "Unknown family or game"; exit 1; }
       - name: Scorecard
         if: env.MANUAL == 'true'
         run: node scripts/scorecard.mjs

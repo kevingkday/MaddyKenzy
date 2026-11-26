@@ -7,6 +7,10 @@ CREATE TABLE IF NOT EXISTS families (
   pin_salt   TEXT,                           -- grown-ups PIN: sha256(pin_salt || pin)
   pin_hash   TEXT,                           -- NULL = fall back to PARENT_PIN env (bootstrap)
   voice_id   TEXT,                           -- ElevenLabs voice for this family's clips
+  dek_wrapped TEXT,                          -- family key locked with MASTER_KEY (NULL in private mode)
+  private_mode INTEGER NOT NULL DEFAULT 0,
+  dek_pass_wrapped TEXT,                     -- private mode: family key locked with the parent's passphrase key
+  pass_salt  TEXT,
   created_at INTEGER NOT NULL DEFAULT (unixepoch())
 );
 
@@ -19,7 +23,9 @@ CREATE TABLE IF NOT EXISTS children (
   id              TEXT PRIMARY KEY,
   family_id       TEXT NOT NULL REFERENCES families(id),
   display_name    TEXT NOT NULL,
-  profile_private TEXT,                        -- parent's notes for the improver: interests, needs, goals
+  profile_private TEXT,                        -- parent's notes for the improver: interests, needs, goals (encrypted)
+  label           TEXT,                        -- what the kid's device shows (a letter or emoji); not secret
+  age             INTEGER,
   created_at      INTEGER NOT NULL DEFAULT (unixepoch())
 );
 
@@ -29,7 +35,8 @@ CREATE TABLE IF NOT EXISTS devices (            -- an iPad/iPhone registered to 
   child_id   TEXT REFERENCES children(id),
   label      TEXT,
   created_at INTEGER NOT NULL DEFAULT (unixepoch()),
-  last_seen  INTEGER
+  last_seen  INTEGER,
+  token_hash TEXT UNIQUE
 );
 
 CREATE TABLE IF NOT EXISTS games (              -- shared game templates; code lives in the repo at site/games/<id>/
@@ -133,3 +140,8 @@ CREATE TABLE IF NOT EXISTS playbooks (            -- the reviewer's own rules, r
   applied_at    INTEGER,
   PRIMARY KEY (family_id, game_id, version)
 );
+
+-- Accounts, device links and encryption (see db/migrations/0005_accounts.sql for column notes)
+CREATE TABLE IF NOT EXISTS users (id TEXT PRIMARY KEY, family_id TEXT REFERENCES families(id), role TEXT NOT NULL DEFAULT 'parent', created_at INTEGER NOT NULL DEFAULT (unixepoch()));
+CREATE TABLE IF NOT EXISTS sessions (token_hash TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES users(id), expires_at INTEGER NOT NULL, created_at INTEGER NOT NULL DEFAULT (unixepoch()));
+CREATE TABLE IF NOT EXISTS links (token_hash TEXT PRIMARY KEY, kind TEXT NOT NULL, user_id TEXT, family_id TEXT, created_by TEXT, expires_at INTEGER NOT NULL, used_at INTEGER, created_at INTEGER NOT NULL DEFAULT (unixepoch()));

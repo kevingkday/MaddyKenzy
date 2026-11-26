@@ -12,7 +12,7 @@ for (const k of ['SITE_URL', 'INTERNAL_TOKEN']) if (!process.env[k]) { console.l
 const FAMILY = process.env.FAMILY, GAME = process.env.GAME || 'itsy-big-show', MODE = process.env.MODE || 'all';
 const MAX = +(process.env.MAX_CLIPS || 800), KEY = process.env.ELEVENLABS_API_KEY;
 const MODEL = process.env.ELEVENLABS_MODEL || 'eleven_multilingual_v2';
-if (!/^[a-z0-9-]{1,40}$/.test(FAMILY || '')) throw new Error('FAMILY required');
+if (!/^[A-Za-z0-9_-]{1,40}$/.test(FAMILY || '')) throw new Error('FAMILY required');
 if (!KEY) { console.log('No ELEVENLABS_API_KEY; skipping voice clips.'); process.exit(0); }
 
 const site = process.env.SITE_URL.replace(/\/$/, ''), auth = { authorization: `Bearer ${process.env.INTERNAL_TOKEN}` };

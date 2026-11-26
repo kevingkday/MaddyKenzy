@@ -58,7 +58,7 @@ export function judge(m, b) {
 }
 
 if (process.argv[1]?.endsWith('scorecard.mjs')) {
-  if (!/^[a-z0-9-]{1,40}$/.test(FAMILY || '')) throw new Error('FAMILY required');
+  if (!/^[A-Za-z0-9_-]{1,40}$/.test(FAMILY || '')) throw new Error('FAMILY required');
   const { versions, events } = await api(`/api/internal/scorecard?family=${FAMILY}&game=${GAME}`);
   const byV = {};
   for (const e of events) (byV[e.v] ||= []).push(e);

@@ -1,5 +1,0 @@
-- No evidence yet: treat every change as an experiment.
-- Change only one or two levers per suggestion, so the scorecard can tell what worked.
-- Favour engagement first (longer play, fewer early exits), then accuracy, then more vocal sounds.
-- Prefer small steps (about 10-25%) over big jumps; undo or reverse what the scorecard marks as hurt.
-- Keep what the children choose most at the top; rotate in fresh words and stickers when boredom rises.

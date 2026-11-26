@@ -4,6 +4,9 @@
 // One failure doesn't stop the others.
 import { execSync } from 'node:child_process';
 import { api } from './improve-api.mjs';
+// families created before encryption get their family key and encrypted notes (no-op once done)
+try { const r = await api('/api/internal/encrypt-existing', {}); console.log(`Encryption check: ${r.done.length} family(s) up to date.`); }
+catch (e) { console.log('Encryption check skipped: ' + e.message); }
 const { games } = await api('/api/internal/families');
 for (const g of games) {
   try { execSync('node scripts/scorecard.mjs', { env: { ...process.env, FAMILY: g.family, GAME: g.game }, stdio: 'inherit' }); }
@@ -24,7 +27,7 @@ for (const d of due) {
     execSync('node scripts/fail.mjs', { env, stdio: 'inherit' });
   }
 }
-for (const g of games) {
+for (const g of games.filter(g => !g.private)) {
   try { execSync('node scripts/meta.mjs', { env: { ...process.env, FAMILY: g.family, GAME: g.game, RUN: '', FORCE: '' }, stdio: 'inherit' }); }
   catch { console.log('Playbook rethink failed for one game; continuing.'); }
 }

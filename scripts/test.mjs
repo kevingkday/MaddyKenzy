@@ -17,7 +17,7 @@ const bad = hosts.filter(h => !allowed.includes(h));
 if (bad.length) fail('index.html talks to outside hosts: ' + [...new Set(bad)].join(', '));
 for (const w of ['XMLHttpRequest', 'WebSocket', 'sendBeacon', 'MediaRecorder', 'eval(', 'new Function']) if (html.includes(w)) fail('index.html uses ' + w);
 const fetches = [...html.matchAll(/fetch\(\s*['"`]([^'"`]+)/g)].map(m => m[1]).concat([...html.matchAll(/grown\('([^']+)'/g)].map(m => m[1]));
-if (fetches.some(f => !['/api/log', 'game.json', '/api/config?game=', '/api/children', '/api/status?game=', '/api/review', '/api/notes', '/api/apply', '/api/dismiss', '/api/undo', '/audio/${CFG.voice}/${k}.mp3'].includes(f))) fail('unexpected fetch: ' + fetches.join(', '));
+if (fetches.some(f => !['/api/log', 'game.json', '/api/config?game=', '/api/children', '/api/status?game=', '/api/review', '/api/notes', '/api/apply', '/api/dismiss', '/api/undo', '/audio/${CFG.voice}/${k}.mp3', '/api/device/link'].includes(f))) fail('unexpected fetch: ' + fetches.join(', '));
 for (const must of ['data-hold="home"', 'openGrown', 'timerMin', 'holdify']) if (!html.includes(must)) fail('safety feature removed: ' + must);
 if (!html.includes(`/*CFG*/${JSON.stringify(cfg)}/*END*/`)) fail(`built-in config out of sync; run node scripts/sync-cfg.mjs ${GAME}`);
 

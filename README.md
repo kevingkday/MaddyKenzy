@@ -33,6 +33,15 @@ Starter playbook: `improvers/starter-playbook.md`. Tables: `version_outcomes`, `
 
 The improver runs in GitHub Actions but reads and writes only through the site's token-protected `/api/internal/*` endpoints. It never commits anything, and it never prints play data or notes to the (public) Action logs.
 
+## Families, sign-up and privacy (beta)
+- **Invite-only sign-up.** The admin makes an invite link in the parent dashboard (`/app`). The parent opens it, signs in (links are one-time and there are no passwords), and fills in **Create your family's game**: kids' names, ages and what they're like, goals, an optional school-newsletter photo, and a grown-ups PIN. Claude writes the family's first version of the game from those notes.
+- **Kid devices** are linked with a one-time code or QR code from the dashboard. The game keeps a device token, and every request from it counts toward that family.
+- **Encryption.** Names, notes, goals, the AI's notes about each child and the playbooks are stored encrypted (AES-256-GCM) with a separate key per family (`lib/crypto.js`). Anyone who copies the database sees only `enc:v1:…`.
+  - **Standard:** the family key is locked with `MASTER_KEY`, a Cloudflare secret that is never in the database. Nightly reviews run automatically.
+  - **Private mode:** the family key is locked with the parent's passphrase in their browser (PBKDF2), and the server never stores it unlocked. Reviews run inside a request the parent makes from the dashboard. Nobody else, including the site owner, can open the notes, and a forgotten passphrase can't be recovered.
+  - Not encrypted: play events (taps, answers, timings), scorecard numbers, and each game's settings (words, emoji, pacing), because devices and the scorecard need them. During a review the notes are sent to Claude to be read.
+- **Export and delete:** the dashboard has **Download our data** and **Delete our family** (which permanently erases everything).
+
 ## How it fits together
 ```
 site/                     static site served by Cloudflare Pages
@@ -63,14 +72,15 @@ wrangler.toml             Pages settings and D1 binding as code
 ### Cloudflare
 1. Create the D1 database and load the schema: `npx wrangler d1 create <name>`, put its id in `wrangler.toml`, then `npx wrangler d1 execute <name> --remote --file db/schema.sql`. (Existing databases: run the files in `db/migrations/` you haven't applied yet.)
 2. **Workers & Pages → Create → Pages → Connect to Git** and pick this repo. Build command: empty. Output: `site` (read from `wrangler.toml`).
-3. In **Settings → Variables and secrets**, add the secrets `PARENT_PIN` (the grown-ups PIN), `INTERNAL_TOKEN` (long random string) and `GH_TOKEN` (below).
+3. In **Settings → Variables and secrets**, add these secrets: `MASTER_KEY` (32 random bytes, base64; **keep a copy somewhere safe, because losing it loses every standard family's notes**), `ANTHROPIC_API_KEY` (for onboarding and private-mode reviews), `INTERNAL_TOKEN` (long random string), `GH_TOKEN` (below) and optionally `PARENT_PIN` (a fallback PIN for families without their own).
 4. Add your domain under **Custom domains**.
 
 ### GitHub
 - Secrets: `ANTHROPIC_API_KEY`, `INTERNAL_TOKEN` (same value as Cloudflare), `SITE_URL` (e.g. `https://maddykenzy.com`). Optional variable `MODEL`.
 - `GH_TOKEN` for Cloudflare: a fine-grained token on this repo only, with **Contents: Read and write** (needed to send repository_dispatch) and **Actions: Read**.
 
-### Add a family (SQL, run with `wrangler d1 execute <name> --remote --command "…"`)
+### Add a family
+Use an invite link from the parent dashboard (admin). The SQL below is only for scripted setups. It stores plaintext, which the nightly upgrade (`/api/internal/encrypt-existing`) then encrypts.
 ```sql
 INSERT INTO families (id, name) VALUES ('smith', 'The Smiths');
 INSERT INTO family_domains (domain, family_id) VALUES ('smithkids.com', 'smith');
