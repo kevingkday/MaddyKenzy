@@ -59,7 +59,10 @@ async function tts(text) {
       body: JSON.stringify({ text, model_id: MODEL, voice_settings: { stability: 0.45, similarity_boost: 0.85, style: 0.35, use_speaker_boost: true } })
     });
     if (r.ok) return Buffer.from(await r.arrayBuffer());
-    if (r.status === 401 || r.status === 403 || r.status === 422) throw new Error(`ElevenLabs refused (${r.status}): check the API key, voice id and plan`);
+    if (r.status === 401 || r.status === 403 || r.status === 422) {
+      const d = (await r.json().catch(() => ({}))).detail || {};
+      throw new Error(`ElevenLabs refused (${r.status}): ${String(d.status || '')} ${String(d.message || (typeof d === 'string' ? d : '')).slice(0, 200)}`);
+    }
     await new Promise(s => setTimeout(s, 2000 * (attempt + 1)));
   }
   throw new Error('ElevenLabs kept failing');
