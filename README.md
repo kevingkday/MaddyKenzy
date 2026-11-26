@@ -1,33 +1,82 @@
-# Maddy & Kenzy's Game Shelf
+# Self-improving kids' games
 
-A simple, static website for hosting standalone HTML/PWA games for Maddy & Kenzy.
+iPad touch games that rebuild themselves around how a child actually plays. This repo is the live example behind **maddykenzy.com**, and it's set up so other families can run the same thing for their own kids.
 
-## Hosting on GitHub Pages
+**The loop:**
+1. The child picks who's playing and plays. Every tap, answer, sound and reward is logged, tagged to that child.
+2. **Every night**, any game that was played gets reviewed. A parent can also tap **Review recent play** at any time.
+3. Claude reads the new play data plus the family's goals and writes a **suggestion**: plain-language notes per child ("Maddy focused on…") and a revised config for that family's copy of the game.
+4. The suggestion must pass automated safety and play tests before it's saved.
+5. Nothing changes until the parent taps **Apply** on the grown-ups screen. A dot on the ★ star shows one is waiting. **Undo** returns to the previous version.
 
-1. Open the repository **Settings** on GitHub.
-2. Go to **Pages** in the left sidebar.
-3. Under **Build and deployment**, set **Source** to **Deploy from a branch**.
-4. Select branch **`main`** and folder **`/ (root)`**, then click **Save**.
-5. Once published, your site will be live at `https://kevingkday.github.io/MaddyKenzy/`.
+## What's public and what's private
+| Public (this repo) | Private (Cloudflare D1, per family) |
+|---|---|
+| Game code, shelf, server functions, improver, tests | Play events, each family's game configs and versions |
+| Starter config for each game (`site/games/<game>/game.json`) | Parent goals, children's profiles, the improver's notes to the parent |
+| The improver's game briefs (`improvers/<game>.md`) | PINs, improve-run history |
 
-> Because each game is stored in its own subfolder (`games/<slug>/`) with relative paths, every game works as an independent, installable, offline-ready PWA.
+The improver runs in GitHub Actions but reads and writes only through the site's token-protected `/api/internal/*` endpoints. It never commits anything, and it never prints play data or notes to the (public) Action logs.
 
-## Adding a New Game
+## How it fits together
+```
+site/                     static site served by Cloudflare Pages
+  index.html …            the game shelf
+  games/<game>/           each game: its own installable app (index.html, game.json, sw.js, manifest, icons)
+functions/api/            Cloudflare Pages Functions (D1 binding "DB")
+  log                     POST play events          ─┐
+  config                  GET this family's live config │ family = site address (family_domains table)
+  children                first names for the picker  │
+  review / status         ask for a review, check it  │
+  notes                   waiting suggestion + history│ (PIN)
+  apply / dismiss / undo  parent decisions           ─┘ (PIN)
+  internal/*              pending, context, propose, run (reviewer only; Bearer INTERNAL_TOKEN)
+lib/server.js             shared helpers: family lookup, PIN check, token check
+db/schema.sql             multi-family schema (db/migrations/ for upgrades)
+improvers/<game>.md       what the improver may change in each game
+scripts/                  daily.mjs (nightly loop) · improve.mjs → test.mjs → publish.mjs · fail.mjs
+.github/workflows/improve.yml   nightly schedule + on-demand reviews
+wrangler.toml             Pages settings and D1 binding as code
+```
 
-1. Unzip or copy the new game's files (e.g. `index.html`, `manifest.webmanifest`, `sw.js`, icons) into a new folder under `games/`, such as:
-   ```text
-   games/my-new-game/
-   ```
-2. Add an entry for it in `games.json`:
-   ```json
-   {
-     "slug": "my-new-game",
-     "title": "My New Game",
-     "description": "Short description of the game.",
-     "path": "games/my-new-game/",
-     "icon": "games/my-new-game/icon-192.png",
-     "accent": "#ff4f9a",
-     "tags": ["Reading", "Offline PWA"]
-   }
-   ```
-3. Commit and push to `main`.
+### The database (db/schema.sql)
+`families` → `family_domains` (which address is whose) · `children` (private profiles) · `devices` ·
+`games` (shared templates) → `family_games` (a family's copy, goals, live version, last review time) → `game_versions` (every config with status proposed / live / dismissed, changelog, private notes, stats, undo flag) ·
+`events` (every interaction, per family/game/child) · `improve_runs`.
+
+## Setup
+### Cloudflare
+1. Create the D1 database and load the schema: `npx wrangler d1 create <name>`, put its id in `wrangler.toml`, then `npx wrangler d1 execute <name> --remote --file db/schema.sql`. (Existing databases: run the files in `db/migrations/` you haven't applied yet.)
+2. **Workers & Pages → Create → Pages → Connect to Git** and pick this repo. Build command: empty. Output: `site` (read from `wrangler.toml`).
+3. In **Settings → Variables and secrets**, add the secrets `PARENT_PIN` (the grown-ups PIN), `INTERNAL_TOKEN` (long random string) and `GH_TOKEN` (below).
+4. Add your domain under **Custom domains**.
+
+### GitHub
+- Secrets: `ANTHROPIC_API_KEY`, `INTERNAL_TOKEN` (same value as Cloudflare), `SITE_URL` (e.g. `https://maddykenzy.com`). Optional variable `MODEL`.
+- `GH_TOKEN` for Cloudflare: a fine-grained token on this repo only, with **Contents: Read and write** (needed to send repository_dispatch) and **Actions: Read**.
+
+### Add a family (SQL, run with `wrangler d1 execute <name> --remote --command "…"`)
+```sql
+INSERT INTO families (id, name) VALUES ('smith', 'The Smiths');
+INSERT INTO family_domains (domain, family_id) VALUES ('smithkids.com', 'smith');
+INSERT INTO children (id, family_id, display_name, profile_private) VALUES ('sam', 'smith', 'Sam', 'Loves trains; working on letter sounds');
+INSERT INTO family_games (family_id, game_id, active_version, goals_private) VALUES ('smith', 'itsy-big-show', 1, 'Counting to 20');
+INSERT INTO game_versions (family_id, game_id, version, config_json, created_by, status) VALUES ('smith', 'itsy-big-show', 1, '<contents of site/games/itsy-big-show/game.json>', 'seed', 'live');
+```
+
+## Using it
+- On the iPad, open the game in Safari, tap **Share**, then **Add to Home Screen**.
+- Grown-ups screen: hold the ★ star for 2 seconds. With your PIN you can read the waiting suggestion and **✅ Apply** it or tap **Not now**, **🔍 Review recent play**, **↩ Undo**, browse the private history, set the play timer and adjust levels.
+- The nightly review needs 20 new play events since the last review. A manual review needs 5.
+
+## Safety checks (every new version)
+`scripts/test.mjs` must pass before a config goes live. It checks:
+- no outside connections, recording or eval
+- hold-to-leave, the timer and the grown-ups screen are intact
+- every activity loads and plays on an iPad, in landscape and portrait
+- no script errors and no overflow
+
+The reviewer may only change config values its game brief lists, and may not remove activities. The microphone only measures loudness on the device; audio is never recorded or sent.
+
+## Adding a game
+Put it in `site/games/<id>/` with a `game.json`, the same `track()` calls and grown-ups screen as Itsy's Big Show, and an `improvers/<id>.md` brief. Add it to `site/games.json` and insert a `games` row.

@@ -1,0 +1,7 @@
+{
+  "name": "maddykenzy",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node scripts/test.mjs", "sync": "node scripts/sync-cfg.mjs" },
+  "devDependencies": { "playwright": "1.49.1" }
+}

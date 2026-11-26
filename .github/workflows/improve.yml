@@ -1,0 +1,55 @@
+name: review
+# Daily: reviews every family game that was played since its last review.
+# On demand: the grown-ups "Review recent play" button (via /api/review) or Run workflow below.
+# Reviews only save suggestions; parents apply them from the grown-ups screen.
+# Everything goes through the site's private API: no play data or notes land in this repo or its logs.
+on:
+  schedule:
+    - cron: '17 10 * * *'   # 10:17 UTC = about 3am in BC / Yukon
+  repository_dispatch:
+    types: [review]
+  workflow_dispatch:
+    inputs:
+      family: { description: 'Family id (empty = daily run for all)', default: '' }
+      game: { description: Game id, default: itsy-big-show }
+permissions:
+  contents: read
+concurrency: review-${{ github.event.client_payload.family || inputs.family || 'daily' }}-${{ github.event.client_payload.game || inputs.game || 'all' }}
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      FAMILY: ${{ github.event.client_payload.family || inputs.family }}
+      GAME: ${{ github.event.client_payload.game || inputs.game }}
+      RUN: ${{ github.event.client_payload.run || '' }}
+      MANUAL: ${{ github.event_name != 'schedule' && (github.event.client_payload.family || inputs.family) && 'true' || 'false' }}
+      SITE_URL: ${{ secrets.SITE_URL }}
+      INTERNAL_TOKEN: ${{ secrets.INTERNAL_TOKEN }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      MODEL: ${{ vars.MODEL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: npm install --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      - name: Daily review of all played games
+        if: env.MANUAL != 'true'
+        run: node scripts/daily.mjs
+      - name: Check inputs
+        if: env.MANUAL == 'true'
+        run: |
+          [[ "$FAMILY" =~ ^[a-z0-9-]+$ && "$GAME" =~ ^[a-z0-9-]+$ && -f "site/games/$GAME/game.json" && -f "improvers/$GAME.md" ]] || { echo "Unknown family or game"; exit 1; }
+      - id: rev
+        if: env.MANUAL == 'true'
+        run: node scripts/improve.mjs
+      - name: Safety checks
+        if: steps.rev.outputs.changed == 'true'
+        run: node scripts/test.mjs
+      - name: Save suggestion for the parent
+        if: steps.rev.outputs.changed == 'true'
+        run: node scripts/publish.mjs
+      - name: Report failure
+        if: failure() && env.MANUAL == 'true'
+        run: node scripts/fail.mjs

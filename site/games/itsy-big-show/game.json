@@ -1,0 +1,206 @@
+{
+  "version": 1,
+  "round_length": 3,
+  "song_chance": 0.35,
+  "bubble_round": 8,
+  "bubble_ms": 900,
+  "say_round": 3,
+  "rewards": {
+    "song": 3,
+    "sticker": 3,
+    "confetti": 2
+  },
+  "boredom": {
+    "idle_seconds": 8,
+    "rapid_taps": 6
+  },
+  "activities": [
+    {
+      "id": "bubbles",
+      "title": "Bubble Pop",
+      "glyph": "🫧",
+      "color": "#2f9be0",
+      "enabled": true,
+      "weight": 1.3
+    },
+    {
+      "id": "say",
+      "title": "Say It!",
+      "glyph": "♪ ah!",
+      "color": "#f5a300",
+      "enabled": true,
+      "weight": 1.1
+    },
+    {
+      "id": "seq",
+      "title": "Spider Climb",
+      "glyph": "1 2 ?",
+      "color": "#6b3fd1",
+      "enabled": true,
+      "weight": 1
+    },
+    {
+      "id": "bugs",
+      "title": "Ladybug Friends",
+      "glyph": "4+1",
+      "color": "#ff6b4a",
+      "enabled": true,
+      "weight": 1
+    },
+    {
+      "id": "letters",
+      "title": "Letter Sounds",
+      "glyph": "Aa",
+      "color": "#14a874",
+      "enabled": true,
+      "weight": 1
+    },
+    {
+      "id": "board",
+      "title": "ABC Board",
+      "glyph": "ABC",
+      "color": "#ff4f9a",
+      "enabled": true,
+      "weight": 0.9
+    },
+    {
+      "id": "sing",
+      "title": "Sing with Itsy",
+      "glyph": "♪ ♫",
+      "color": "#b14fd8",
+      "enabled": true,
+      "weight": 0.8
+    }
+  ],
+  "bubble_mix": {
+    "words": 0.7,
+    "letters": 0.15,
+    "numbers": 0.15
+  },
+  "bubble_words": [
+    {
+      "w": "cat",
+      "e": "🐱"
+    },
+    {
+      "w": "dog",
+      "e": "🐶"
+    },
+    {
+      "w": "ball",
+      "e": "⚽"
+    },
+    {
+      "w": "car",
+      "e": "🚗"
+    },
+    {
+      "w": "fish",
+      "e": "🐟"
+    },
+    {
+      "w": "bear",
+      "e": "🧸"
+    },
+    {
+      "w": "apple",
+      "e": "🍎"
+    },
+    {
+      "w": "star",
+      "e": "⭐"
+    },
+    {
+      "w": "duck",
+      "e": "🦆"
+    },
+    {
+      "w": "moon",
+      "e": "🌙"
+    },
+    {
+      "w": "bunny",
+      "e": "🐰"
+    },
+    {
+      "w": "cake",
+      "e": "🎂"
+    },
+    {
+      "w": "bus",
+      "e": "🚌"
+    },
+    {
+      "w": "frog",
+      "e": "🐸"
+    },
+    {
+      "w": "banana",
+      "e": "🍌"
+    },
+    {
+      "w": "baby",
+      "e": "👶"
+    }
+  ],
+  "say_prompts": [
+    {
+      "w": "ma",
+      "e": "👩"
+    },
+    {
+      "w": "ba",
+      "e": "⚽"
+    },
+    {
+      "w": "moo",
+      "e": "🐮"
+    },
+    {
+      "w": "baa",
+      "e": "🐑"
+    },
+    {
+      "w": "woof",
+      "e": "🐶"
+    },
+    {
+      "w": "meow",
+      "e": "🐱"
+    },
+    {
+      "w": "up",
+      "e": "⬆️"
+    },
+    {
+      "w": "bye",
+      "e": "👋"
+    },
+    {
+      "w": "wow",
+      "e": "🤩"
+    },
+    {
+      "w": "oh",
+      "e": "😮"
+    }
+  ],
+  "stickers": [
+    "🦄",
+    "🐶",
+    "🐱",
+    "🐼",
+    "🐸",
+    "🦋",
+    "🐢",
+    "🐙",
+    "🦊",
+    "🐧",
+    "🐳",
+    "🌈",
+    "🍓",
+    "🚀",
+    "🎈",
+    "🌻"
+  ]
+}

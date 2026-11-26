@@ -1,0 +1,16 @@
+[
+  {
+    "slug": "itsy-big-show",
+    "title": "Itsy's Big Show",
+    "description": "Pop bubbles, climb the spout with Itsy, find letters and numbers, and make sounds to make Itsy dance. Gets better the more they play.",
+    "path": "games/itsy-big-show/",
+    "icon": "games/itsy-big-show/icon-192.png",
+    "accent": "#6b3fd1",
+    "tags": [
+      "Letters",
+      "Numbers",
+      "Talking",
+      "Music"
+    ]
+  }
+]

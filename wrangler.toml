@@ -1,0 +1,14 @@
+# Cloudflare Pages settings kept in the repo, so the bindings are code.
+# Secrets (PARENT_PIN, INTERNAL_TOKEN, GH_TOKEN) are set in the Cloudflare dashboard, never here.
+name = "maddykenzy"
+pages_build_output_dir = "site"
+compatibility_date = "2024-11-01"
+
+[vars]
+DEFAULT_FAMILY = "maddykenzy"         # used on addresses not listed in the family_domains table
+GH_REPO = "kevingkday/maddykenzy"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "maddykenzy-db"
+database_id = "e3175059-c499-44a7-b2e0-b3cd394bb77d"
