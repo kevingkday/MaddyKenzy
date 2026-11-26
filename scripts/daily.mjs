@@ -10,6 +10,8 @@ for (const d of due) {
   try {
     execSync('git checkout -- site', { stdio: 'ignore' });
     execSync('rm -f .candidate.json && node scripts/improve.mjs && if [ -f .candidate.json ]; then node scripts/test.mjs && node scripts/publish.mjs; fi', { env, stdio: 'inherit', shell: '/bin/bash' });
+    // clips for the suggested config's new words, plus any lines that fell back to the iPad voice
+    execSync('if [ -f .candidate.json ]; then CONFIG_FILE=.candidate.json node scripts/voice.mjs; else node scripts/voice.mjs; fi', { env, stdio: 'inherit', shell: '/bin/bash' });
   } catch {
     failed++;
     execSync('node scripts/fail.mjs', { env, stdio: 'inherit' });

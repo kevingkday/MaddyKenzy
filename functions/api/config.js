@@ -9,6 +9,7 @@ export async function onRequestGet({ request, env }) {
     WHERE fg.family_id = ? AND fg.game_id = ?`).bind(family, game).first();
   if (!row) return json({ error: 'no config' }, 404);
   const pending = await env.DB.prepare("SELECT version FROM game_versions WHERE family_id = ? AND game_id = ? AND status = 'proposed' ORDER BY version DESC LIMIT 1").bind(family, game).first();
+  const fam = await env.DB.prepare('SELECT voice_id FROM families WHERE id = ?').bind(family).first();
   const config = JSON.parse(row.config_json); config.version = row.version;
-  return json({ version: row.version, config, pending: pending?.version || null });
+  return json({ version: row.version, config, pending: pending?.version || null, voice: fam?.voice_id || null });
 }

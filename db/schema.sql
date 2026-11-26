@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS families (
   name       TEXT NOT NULL,
   pin_salt   TEXT,                           -- grown-ups PIN: sha256(pin_salt || pin)
   pin_hash   TEXT,                           -- NULL = fall back to PARENT_PIN env (bootstrap)
+  voice_id   TEXT,                           -- ElevenLabs voice for this family's clips
   created_at INTEGER NOT NULL DEFAULT (unixepoch())
 );
 
@@ -94,3 +95,13 @@ CREATE TABLE IF NOT EXISTS improve_runs (
   finished_at  INTEGER
 );
 CREATE INDEX IF NOT EXISTS runs_by_game ON improve_runs(family_id, game_id, id);
+
+CREATE TABLE IF NOT EXISTS voice_clips (        -- spoken lines in the family's chosen voice
+  family_id  TEXT NOT NULL,
+  voice_id   TEXT NOT NULL,
+  hash       TEXT NOT NULL,                    -- hash of the normalised phrase (clipKey in the game)
+  text       TEXT NOT NULL,
+  mp3        BLOB NOT NULL,
+  created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+  PRIMARY KEY (family_id, voice_id, hash)
+);

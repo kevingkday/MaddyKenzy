@@ -353,6 +353,8 @@ button{font:inherit;color:inherit;border:0;cursor:pointer;touch-action:manipulat
    <div id="sugg"></div>
    <div id="ver"></div>
   </div>
+  <div class="gcard"><h3>Voice</h3><p style="margin:4px 0 10px">Lines with a recording play in Dad's voice. Anything without one yet uses the iPad voice and gets added automatically on the next nightly run.</p>
+   <div class="grow"><button class="pill soft" id="voiceToggle"></button><button class="pill soft" id="voiceSample">▶ Play samples</button></div><p class="status" id="vStatus"></p></div>
   <div class="gcard"><h3>Play timer</h3><p style="margin:4px 0 10px">When time is up, Itsy sings goodbye and the game rests until a grown-up holds the button.</p>
    <div class="grow seg" id="timer"></div></div>
   <div class="gcard"><h3>What she's doing</h3><div id="summary"></div></div>
@@ -469,12 +471,35 @@ function introSound(){
 let voice=null,quietUntil=0;const hasTTS='speechSynthesis' in window;
 function pickVoice(){const vs=speechSynthesis.getVoices();voice=vs.find(v=>/^en[-_](CA|US)/i.test(v.lang)&&/Samantha|Karen|Tessa|Moira|Female|Ava|Allison/i.test(v.name))||vs.find(v=>/^en[-_](CA|US)/i.test(v.lang))||vs.find(v=>/^en/i.test(v.lang))||null}
 if(hasTTS){pickVoice();speechSynthesis.onvoiceschanged=pickVoice}
-function say(text){return new Promise(res=>{
+function ttsSay(text){return new Promise(res=>{
  if(!hasTTS||!text)return res();
  speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);if(voice)u.voice=voice;u.rate=.88;u.pitch=1.15;
  const est=1500+text.length*85;quietUntil=Date.now()+est;
  let done=false;const fin=()=>{if(!done){done=true;quietUntil=Date.now()+350;res()}};u.onend=u.onerror=fin;speechSynthesis.speak(u);setTimeout(fin,est);
 })}
+
+/* Dad's voice: each sentence or comma-piece is a pre-made clip (made by scripts/voice.mjs).
+   Any piece without a clip falls back to the iPad voice and is reported so the next run makes it. */
+let sayId=0,clipSrc=[];const bufCache=new Map(),missed=new Set();
+function cyrb53(str){let h1=0xdeadbeef,h2=0x41c6ce57;for(let i=0,ch;i<str.length;i++){ch=str.charCodeAt(i);h1=Math.imul(h1^ch,2654435761);h2=Math.imul(h2^ch,1597334677)}
+ h1=Math.imul(h1^(h1>>>16),2246822507);h1^=Math.imul(h2^(h2>>>13),3266489909);h2=Math.imul(h2^(h2>>>16),2246822507);h2^=Math.imul(h1^(h1>>>13),3266489909);return(4294967296*(2097151&h2)+(h1>>>0)).toString(36)}
+function segs(text){return(String(text).match(/[^.!?,]+[.!?,]*/g)||[]).map(s=>{const m=s.trim().match(/^(.*?)([.!?,]*)$/),core=m[1].trim().replace(/\s+/g,' '),end=(m[2].match(/[.!?]/)||[''])[0];
+ return core?{key:cyrb53(core.toLowerCase()+end),gen:core+(end||'.')}:null}).filter(Boolean)}
+function clip(k){if(bufCache.has(k))return bufCache.get(k);const p=fetch(`/audio/${CFG.voice}/${k}.mp3`).then(r=>r.ok?r.arrayBuffer():null)
+ .then(b=>b?new Promise((ok,no)=>audio().decodeAudioData(b,ok,no)):null).catch(()=>null);bufCache.set(k,p);return p}
+function stopClips(){clipSrc.forEach(s=>{try{s.stop()}catch(e){}});clipSrc=[]}
+function hush(){sayId++;stopClips();if(hasTTS)speechSynthesis.cancel()}
+function playBuf(b){return new Promise(res=>{const s=ctx.createBufferSource();s.buffer=b;s.connect(master);clipSrc.push(s);quietUntil=Date.now()+b.duration*1000+400;
+ let done=false;const fin=()=>{if(!done){done=true;clipSrc=clipSrc.filter(x=>x!==s);res()}};s.onended=fin;s.start();setTimeout(fin,b.duration*1000+800)})}
+function miss(p){if(missed.has(p.key))return;missed.add(p.key);track('tts_miss',{text:p.gen.slice(0,160)})}
+async function say(text){
+ if(!text)return;hush();const id=sayId;
+ if(S.voiceOn===false||!CFG.voice)return ttsSay(text);
+ audio();const parts=segs(text),bufs=await Promise.all(parts.map(p=>clip(p.key)));
+ if(id!==sayId)return;
+ if(!bufs.some(Boolean)){parts.forEach(miss);return ttsSay(text)}
+ for(let i=0;i<parts.length;i++){if(id!==sayId)return;if(bufs[i])await playBuf(bufs[i]);else{miss(parts[i]);await ttsSay(parts[i].gen)}}
+}
 
 /* ---------- every touch answers back ---------- */
 const COLS=['#ffd23f','#ff4f9a','#8fdcff','#58c96a','#ff6b4a','#b18cff'];
@@ -519,7 +544,7 @@ async function phrase(i){
  await wait(dur+250);
 }
 async function sing(parts){
- if(hasTTS)speechSynthesis.cancel();
+ hush();
  $('#show').classList.add('on');
  for(const i of parts)await phrase(i);
  await wait(300);$('#show').classList.remove('on');
@@ -744,7 +769,7 @@ const ABC=[['A','C5 2'],['B','C5 2'],['C','G5 2'],['D','G5 2'],['E','A5 2'],['F'
  ['Now I know my A B Cs','C5 2,C5 2,G5 2,G5 2,A5 2,A5 2,G5 4'],
  ["Next time won't you sing with me!",'F5 2,F5 2,E5 2,E5 2,D5 2,D5 2,C5 4']];
 $('#abcSing').addEventListener('click',async()=>{
- if(abcBusy)return;abcBusy=true;stopAbc=false;$('#abcSing').disabled=true;if(hasTTS)speechSynthesis.cancel();track('abc_song');
+ if(abcBusy)return;abcBusy=true;stopAbc=false;$('#abcSing').disabled=true;hush();track('abc_song');
  for(const[lab,ns]of ABC){
   if(stopAbc)break;const dur=playNotes(parse(ns),.2);
   tiles.forEach(t=>t.classList.remove('lit'));
@@ -765,7 +790,7 @@ const stars=()=>{const el=$('#stars');el.textContent='★ '+S.stars;el.classList
 const shelf=()=>{$('#shelf').textContent=S.stickers.slice(-8).join('')};
 $('#tiles').addEventListener('click',e=>{const t=e.target.closest('[data-go]');if(!t||timeUp)return;blip('C6');launch(t.dataset.go)});
 function goHome(reason='hold'){
- run++;if(hasTTS)speechSynthesis.cancel();clearTimeout(idleT);clearInterval(bubT);stopMic();stopAbc=true;busy=false;cur=null;
+ run++;hush();clearTimeout(idleT);clearInterval(bubT);stopMic();stopAbc=true;busy=false;cur=null;
  closeAct(reason);mode=null;$$('.overlay').forEach(o=>o.classList.remove('on'));renderHome();show('home');
 }
 
@@ -838,7 +863,7 @@ async function notes(){
   box.innerHTML=`<h3>History (private)</h3>`+j.history.map(v=>`<details style="margin:6px 0"><summary><b>v${v.version}${v.version===j.active?' (live)':''}${v.undone?' (undone)':''}</b>: ${esc(v.changelog)}</summary>${v.notes_private?`<div style="white-space:pre-wrap;margin:6px 0 0 1em">${esc(v.notes_private)}</div>`:''}</details>`).join('');
  }catch(e){sg.innerHTML='';box.innerHTML=`<p style="margin:6px 0 0">${esc(e.message)}</p>`}
 }
-async function reloadCfg(){const j=await fetch('/api/config?game='+GAME,{cache:'no-store'}).then(r=>r.json()).catch(()=>null);if(j&&j.config){CFG=Object.assign({},DEFAULT_CFG,j.config,{pending:j.pending});put('itsycfg',CFG);renderHome();stars()}}
+async function reloadCfg(){const j=await fetch('/api/config?game='+GAME,{cache:'no-store'}).then(r=>r.json()).catch(()=>null);if(j&&j.config){CFG=Object.assign({},DEFAULT_CFG,j.config,{pending:j.pending,voice:j.voice});put('itsycfg',CFG);renderHome();stars()}}
 $('#grown').addEventListener('click',async e=>{
  const b=e.target.closest('#apply,#dismiss');if(!b)return;const st=$('#gStatus');
  try{if(b.id==='apply'){await grown('/api/apply',{version:+b.dataset.v});await reloadCfg();st.textContent=`Applied. The game is now on version ${b.dataset.v}.`;track('applied',{to:+b.dataset.v})}
@@ -848,6 +873,11 @@ $('#grown').addEventListener('click',async e=>{
 $('#review').addEventListener('click',requestReview);
 $('#undo').addEventListener('click',async()=>{const st=$('#gStatus');try{const j=await grown('/api/undo');await reloadCfg();st.textContent=j.changed?`Undone. Back on version ${j.version}.`:'Nothing to undo.';notes()}catch(e){st.textContent=e.message}});
 $('#pin').addEventListener('change',notes);
+function voiceBtn(){$('#voiceToggle').textContent=S.voiceOn===false?"Use Dad's voice: off":"Use Dad's voice: on"}
+$('#voiceToggle').addEventListener('click',()=>{S.voiceOn=S.voiceOn===false;persist();voiceBtn()});
+$('#voiceSample').addEventListener('click',async()=>{const st=$('#vStatus');if(!CFG.voice){st.textContent='No voice set up for this family yet.';return}
+ for(const t of SAMPLES){st.textContent=t;await say(t);await wait(250)}st.textContent=''});
+voiceBtn();
 
 /* ---------- who's playing ---------- */
 let KIDS=load('itsykids',[]);
@@ -877,10 +907,26 @@ $('#replay').addEventListener('click',intro);
 document.addEventListener('contextmenu',e=>e.preventDefault());
 document.addEventListener('gesturestart',e=>e.preventDefault());
 stars();shelf();renderHome();
-fetch('/api/config?game='+GAME,{cache:'no-store'}).then(r=>r.ok?r.json():null).then(j=>j&&j.config&&j.config.activities?Object.assign(j.config,{pending:j.pending}):fetch('game.json',{cache:'no-store'}).then(r=>r.ok?r.json():null))
+fetch('/api/config?game='+GAME,{cache:'no-store'}).then(r=>r.ok?r.json():null).then(j=>j&&j.config&&j.config.activities?Object.assign(j.config,{pending:j.pending,voice:j.voice}):fetch('game.json',{cache:'no-store'}).then(r=>r.ok?r.json():null))
  .then(j=>{if(j&&j.activities){CFG=Object.assign({},DEFAULT_CFG,j);put('itsycfg',CFG);renderHome();stars()}}).catch(()=>{const c=load('itsycfg',null);if(c&&c.activities){CFG=c;renderHome()}});
 if('serviceWorker' in navigator){try{navigator.serviceWorker.register('sw.js').catch(()=>{})}catch(e){}}
-window.__itsy={launch,goHome,openGrown,get mode(){return mode},get score(){return score}};
+/* every line the game can speak, split into clip-sized pieces (used by scripts/voice.mjs) */
+function phrases(kids=[]){
+ const out=new Set(),add=t=>t&&out.add(t),keep={miss:S.miss,hit:S.hit};S.miss={};S.hit={};
+ for(const a of ['seq','bugs','letters'])for(let l=0;l<5;l++)for(let i=0;i<1200;i++){const q=ACT[a].make(l);add(q.speak);add(q.praise)}
+ Object.assign(S,keep);
+ ['Try this one!','Oops! Look, this one!','Almost! Try the shiny one.','A new friend!','You did it!','Tap a letter!',"Who's playing?",'All done! Bye bye! See you next time!','Find the letter!'].forEach(add);
+ for(const p of CFG.say_prompts){add(`Can you say ${p.w}?`);add(`${p.w}! ${p.w}!`);add(`Yes! ${p.w}!`);add(`Wow! ${p.w}!`);add(`Great talking! ${p.w}!`)}
+ for(const w of CFG.bubble_words)add(w.w);
+ for(const w of WORDS){add(NAME[w.L]);add(`${NAME[w.L]}. ${SOUND[w.L]}, ${SOUND[w.L]}, ${w.w}!`)}
+ for(let n=0;n<=20;n++)add(String(n));
+ for(const k of kids)add(`Hi ${k}!`);
+ const m=new Map();for(const t of out)for(const s of segs(t))m.set(s.key,s.gen);
+ return[...m].map(([key,text])=>({key,text}));
+}
+const SAMPLES=["Who's playing?",'Hi Maddy!','Hi Kenzy!','Can you say moo?','Yes! moo!','bee. buh, buh, bear!','em. mmm, mmm, moon!','ess. sss, sss, sun!','tee. tuh, tuh, turtle!',
+ 'Itsy has 4 ladybug friends. One more friend comes! How many friends now?','Yes! 4 plus 1 is 5!','Counting down! 5, 4, hmmm, 2. Which number is missing?','A new friend!','You did it!','Try this one!'];
+window.__itsy={launch,goHome,openGrown,phrases,segs,SAMPLES,setCfg:c=>{CFG=Object.assign({},DEFAULT_CFG,c)},get mode(){return mode},get score(){return score}};
 }
 </script>
 </body>

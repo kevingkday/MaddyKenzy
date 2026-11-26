@@ -28,6 +28,8 @@ jobs:
       INTERNAL_TOKEN: ${{ secrets.INTERNAL_TOKEN }}
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       MODEL: ${{ vars.MODEL }}
+      ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+      ELEVENLABS_MODEL: ${{ vars.ELEVENLABS_MODEL }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -50,6 +52,10 @@ jobs:
       - name: Save suggestion for the parent
         if: steps.rev.outputs.changed == 'true'
         run: node scripts/publish.mjs
+      - name: Voice clips for the suggestion
+        if: steps.rev.outputs.changed == 'true'
+        continue-on-error: true
+        run: CONFIG_FILE=.candidate.json node scripts/voice.mjs
       - name: Report failure
         if: failure() && env.MANUAL == 'true'
         run: node scripts/fail.mjs

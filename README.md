@@ -69,6 +69,13 @@ INSERT INTO game_versions (family_id, game_id, version, config_json, created_by,
 - Grown-ups screen: hold the ★ star for 2 seconds. With your PIN you can read the waiting suggestion and **✅ Apply** it or tap **Not now**, **🔍 Review recent play**, **↩ Undo**, browse the private history, set the play timer and adjust levels.
 - The nightly review needs 20 new play events since the last review. A manual review needs 5.
 
+## Voice (optional, ElevenLabs)
+Every line the game says can play in a family's own voice, e.g. a parent's ElevenLabs voice clone.
+- Set `families.voice_id` for the family, and add the GitHub secret `ELEVENLABS_API_KEY` (optional variable `ELEVENLABS_MODEL`).
+- **Actions → voice → Run workflow** with `sample` makes a few lines to try (Grown-ups → Voice → ▶ Play samples). `all` makes every line, about 450 short clips.
+- `scripts/voice.mjs` asks the game itself for every line it can say (`window.__itsy.phrases`), splits them into sentence and comma pieces, and makes only the missing ones. Clips are stored in D1 (`voice_clips`) and served from `/audio/<voice>/<hash>.mp3`.
+- Any piece without a clip plays in the iPad voice and is logged as `tts_miss`. The nightly review then makes it, along with clips for any new words in a suggestion.
+
 ## Safety checks (every new version)
 `scripts/test.mjs` must pass before a config goes live. It checks:
 - no outside connections, recording or eval
