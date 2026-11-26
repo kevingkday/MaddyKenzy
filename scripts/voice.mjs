@@ -16,7 +16,9 @@ if (!/^[a-z0-9-]{1,40}$/.test(FAMILY || '')) throw new Error('FAMILY required');
 if (!KEY) { console.log('No ELEVENLABS_API_KEY; skipping voice clips.'); process.exit(0); }
 
 const site = process.env.SITE_URL.replace(/\/$/, ''), auth = { authorization: `Bearer ${process.env.INTERNAL_TOKEN}` };
-const ctx = await (await fetch(`${site}/api/internal/voice?family=${FAMILY}`, { headers: auth })).json();
+const vr = await fetch(`${site}/api/internal/voice?family=${FAMILY}`, { headers: auth });
+if (!vr.ok) { console.log(vr.status === 401 ? 'The site rejected INTERNAL_TOKEN (401). Check it matches in GitHub and Cloudflare, and that Cloudflare was redeployed after adding it.' : `The site answered ${vr.status} for the voice list.`); process.exit(1); }
+const ctx = await vr.json();
 if (!ctx.voice) { console.log('This family has no voice set; skipping.'); process.exit(0); }
 const config = process.env.CONFIG_FILE ? JSON.parse(fs.readFileSync(process.env.CONFIG_FILE, 'utf8')).config : ctx.configs?.[GAME];
 
