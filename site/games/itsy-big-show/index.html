@@ -418,14 +418,28 @@ async function flush(){
  return false;
 }
 setInterval(flush,20000);
-document.addEventListener('visibilitychange',()=>{if(document.hidden){if(mode)track('hide');flush()}else if(ctx)ctx.resume()});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){if(mode)track('hide');flush()}else if(ctx){ctx.resume().catch(()=>{});if(silentEl)silentEl.play().catch(()=>{})}});
 
 /* ---------- sound ---------- */
 let ctx,master;
 function audio(){
  if(!ctx){const AC=window.AudioContext||window.webkitAudioContext;ctx=new AC();master=ctx.createGain();master.gain.value=.9;const c=ctx.createDynamicsCompressor();master.connect(c);c.connect(ctx.destination)}
- if(ctx.state!=='running')ctx.resume();return ctx;
+ if(ctx.state!=='running')ctx.resume().catch(()=>{});return ctx;
 }
+/* iPhone/iPad: play through the silent switch (iOS 17+), and wake the sound engine on every touch,
+   because iOS suspends or "interrupts" it after locking, app switching, calls and notifications. */
+try{if(navigator.audioSession)navigator.audioSession.type='playback'}catch(e){}
+let silentEl=null;
+function unlockAudio(){
+ const c=audio();
+ if(c.state!=='running'){c.resume().catch(()=>{});
+  try{const b=c.createBuffer(1,1,22050),s=c.createBufferSource();s.buffer=b;s.connect(c.destination);s.start(0)}catch(e){}}
+ // older iOS: a looping silent <audio> switches the page to "media playback", so the silent switch no longer mutes it
+ if(!navigator.audioSession&&!silentEl&&/iP(hone|ad|od)|Macintosh/.test(navigator.userAgent)&&'ontouchend' in document){
+  silentEl=new Audio('data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwLjE2LjEwMAAAAAAAAAAAAAAA//NwwAAAAAAAAAAAAEluZm8AAAAPAAAAFgAACbEAHR0dHSgoKCgoMzMzMz09PT09SEhISFNTU1NTXl5eXmlpaWlpc3Nzc35+fn5+iYmJiZSUlJSUnp6enp6pqamptLS0tLS/v7+/ysrKysrU1NTU39/f39/q6urq9fX19fX/////AAAAAExhdmM2MC4zMQAAAAAAAAAAAAAAACQELwAAAAAAAAmxyOFTSgAAAAAAAAAAAAAAAAD/80DEAAAAA0gAAAAATEFNRTMuMTAwVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsRbAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQMSkAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVTEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//NCxKMAAANIAAAAAFVVVVVVVVVVVVVVVVVVVVVVVVVVTEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//NAxKQAAANIAAAAAFVVVVVVVVVVVVVVVVVVVVVVVVVMQU1FMy4xMDBVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVX/80LEowAAA0gAAAAAVVVVVVVVVVVVVVVVVVVVVVVVVVVMQU1FMy4xMDBVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVX/80DEpAAAA0gAAAAAVVVVVVVVVVVVVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsSjAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQMSkAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVTEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//NCxKMAAANIAAAAAFVVVVVVVVVVVVVVVVVVVVVVVVVVTEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//NAxKQAAANIAAAAAFVVVVVVVVVVVVVVVVVVVVVVVVVMQU1FMy4xMDBVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVX/80LEowAAA0gAAAAAVVVVVVVVVVVVVVVVVVVVVVVVVVVMQU1FMy4xMDBVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVX/80DEpAAAA0gAAAAAVVVVVVVVVVVVVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsSjAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQMSkAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVTEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//NCxKMAAANIAAAAAFVVVVVVVVVVVVVVVVVVVVVVVVVVTEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//NAxKQAAANIAAAAAFVVVVVVVVVVVVVVVVVVVVVVVVVMQU1FMy4xMDBVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVX/80LEowAAA0gAAAAAVVVVVVVVVVVVVVVVVVVVVVVVVVVMQU1FMy4xMDBVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVX/80DEpAAAA0gAAAAAVVVVVVVVVVVVVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsSjAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQMSkAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//NCxKMAAANIAAAAAFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV');
+  silentEl.loop=true;silentEl.setAttribute('playsinline','');silentEl.volume=0.01;silentEl.play().catch(()=>{silentEl=null})}
+}
+['touchend','pointerdown','click','keydown'].forEach(ev=>document.addEventListener(ev,()=>{if(ctx||ev==='touchend'||ev==='click')unlockAudio()},{capture:true,passive:true}));
 const SEMI={C:0,D:2,E:4,F:5,G:7,A:9,B:11};
 const hz=n=>{const m=n.match(/^([A-G])(#?)(\d)$/);return 440*2**((12*(+m[3]+1)+SEMI[m[1]]+(m[2]?1:0)-69)/12)};
 function tone(f,t,d,{type='triangle',vol=.22,attack=.012}={}){
@@ -473,9 +487,9 @@ function pickVoice(){const vs=speechSynthesis.getVoices();voice=vs.find(v=>/^en[
 if(hasTTS){pickVoice();speechSynthesis.onvoiceschanged=pickVoice}
 function ttsSay(text){return new Promise(res=>{
  if(!hasTTS||!text)return res();
- speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);if(voice)u.voice=voice;u.rate=.88;u.pitch=1.15;
+ const busy=speechSynthesis.speaking||speechSynthesis.pending;if(busy)speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);if(voice)u.voice=voice;u.rate=.88;u.pitch=1.15;
  const est=1500+text.length*85;quietUntil=Date.now()+est;
- let done=false;const fin=()=>{if(!done){done=true;quietUntil=Date.now()+350;res()}};u.onend=u.onerror=fin;speechSynthesis.speak(u);setTimeout(fin,est);
+ let done=false;const fin=()=>{if(!done){done=true;quietUntil=Date.now()+350;res()}};u.onend=u.onerror=fin;if(busy)setTimeout(()=>speechSynthesis.speak(u),120);else speechSynthesis.speak(u);setTimeout(fin,est);
 })}
 
 /* Dad's voice: each sentence or comma-piece is a pre-made clip (made by scripts/voice.mjs).
@@ -486,15 +500,15 @@ function cyrb53(str){let h1=0xdeadbeef,h2=0x41c6ce57;for(let i=0,ch;i<str.length
 function segs(text){return(String(text).match(/[^.!?,]+[.!?,]*/g)||[]).map(s=>{const m=s.trim().match(/^(.*?)([.!?,]*)$/),core=m[1].trim().replace(/\s+/g,' '),end=(m[2].match(/[.!?]/)||[''])[0];
  return core?{key:cyrb53(core.toLowerCase()+end),gen:core+(end||'.')}:null}).filter(Boolean)}
 function clip(k){if(bufCache.has(k))return bufCache.get(k);const p=fetch(`/audio/${CFG.voice}/${k}.mp3`).then(r=>r.ok?r.arrayBuffer():null)
- .then(b=>b?new Promise((ok,no)=>audio().decodeAudioData(b,ok,no)):null).catch(()=>null);bufCache.set(k,p);return p}
+ .then(b=>b?new Promise((ok,no)=>audio().decodeAudioData(b,ok,no)):null).catch(()=>{bufCache.delete(k);return null});bufCache.set(k,p);return p}
 function stopClips(){clipSrc.forEach(s=>{try{s.stop()}catch(e){}});clipSrc=[]}
-function hush(){sayId++;stopClips();if(hasTTS)speechSynthesis.cancel()}
+function hush(){sayId++;stopClips();if(hasTTS&&(speechSynthesis.speaking||speechSynthesis.pending))speechSynthesis.cancel()}
 function playBuf(b){return new Promise(res=>{const s=ctx.createBufferSource();s.buffer=b;s.connect(master);clipSrc.push(s);quietUntil=Date.now()+b.duration*1000+400;
  let done=false;const fin=()=>{if(!done){done=true;clipSrc=clipSrc.filter(x=>x!==s);res()}};s.onended=fin;s.start();setTimeout(fin,b.duration*1000+800)})}
 function miss(p){if(missed.has(p.key))return;missed.add(p.key);track('tts_miss',{text:p.gen.slice(0,160)})}
 async function say(text){
  if(!text)return;hush();const id=sayId;
- if(S.voiceOn===false||!CFG.voice)return ttsSay(text);
+ if(S.voiceOn===false||!CFG.voice||(ctx&&ctx.state!=='running'&&ctx.state!=='suspended'))return ttsSay(text);
  audio();const parts=segs(text),bufs=await Promise.all(parts.map(p=>clip(p.key)));
  if(id!==sayId)return;
  if(!bufs.some(Boolean)){parts.forEach(miss);return ttsSay(text)}
