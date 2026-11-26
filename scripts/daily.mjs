@@ -1,7 +1,14 @@
-// Daily review: for every family game with new play since its last review,
-// run review -> safety checks -> save suggestion. One failure doesn't stop the others.
+// Nightly: 1) scorecard every family game (what did applied changes do?)
+//          2) review games with new play -> safety checks -> save suggestion (+ voice clips)
+//          3) rethink each game's playbook when enough results have been measured
+// One failure doesn't stop the others.
 import { execSync } from 'node:child_process';
 import { api } from './improve-api.mjs';
+const { games } = await api('/api/internal/families');
+for (const g of games) {
+  try { execSync('node scripts/scorecard.mjs', { env: { ...process.env, FAMILY: g.family, GAME: g.game }, stdio: 'inherit' }); }
+  catch { console.log('Scorecard failed for one game; continuing.'); }
+}
 const { due } = await api(`/api/internal/pending?min=${process.env.MIN_NEW_EVENTS || 20}`);
 console.log(`${due.length} game(s) with new play to review.`);
 let failed = 0;
@@ -16,6 +23,10 @@ for (const d of due) {
     failed++;
     execSync('node scripts/fail.mjs', { env, stdio: 'inherit' });
   }
+}
+for (const g of games) {
+  try { execSync('node scripts/meta.mjs', { env: { ...process.env, FAMILY: g.family, GAME: g.game, RUN: '', FORCE: '' }, stdio: 'inherit' }); }
+  catch { console.log('Playbook rethink failed for one game; continuing.'); }
 }
 execSync('git checkout -- site', { stdio: 'ignore' });
 console.log(`Done. ${due.length - failed} reviewed, ${failed} failed.`);

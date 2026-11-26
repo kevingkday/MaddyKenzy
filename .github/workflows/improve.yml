@@ -1,5 +1,5 @@
 name: review
-# Daily: reviews every family game that was played since its last review.
+# Nightly: scorecard, reviews for games played since their last review, playbook rethinks when due.
 # On demand: the grown-ups "Review recent play" button (via /api/review) or Run workflow below.
 # Reviews only save suggestions; parents apply them from the grown-ups screen.
 # Everything goes through the site's private API: no play data or notes land in this repo or its logs.
@@ -23,6 +23,7 @@ jobs:
       FAMILY: ${{ github.event.client_payload.family || inputs.family }}
       GAME: ${{ github.event.client_payload.game || inputs.game }}
       RUN: ${{ github.event.client_payload.run || '' }}
+      KIND: ${{ github.event.client_payload.kind || 'review' }}
       MANUAL: ${{ github.event_name != 'schedule' && (github.event.client_payload.family || inputs.family) && 'true' || 'false' }}
       SITE_URL: ${{ secrets.SITE_URL }}
       INTERNAL_TOKEN: ${{ secrets.INTERNAL_TOKEN }}
@@ -43,8 +44,15 @@ jobs:
         if: env.MANUAL == 'true'
         run: |
           [[ "$FAMILY" =~ ^[a-z0-9-]+$ && "$GAME" =~ ^[a-z0-9-]+$ && -f "site/games/$GAME/game.json" && -f "improvers/$GAME.md" ]] || { echo "Unknown family or game"; exit 1; }
-      - id: rev
+      - name: Scorecard
         if: env.MANUAL == 'true'
+        run: node scripts/scorecard.mjs
+      - name: Rethink the playbook
+        if: env.MANUAL == 'true' && env.KIND == 'meta'
+        env: { FORCE: '1' }
+        run: node scripts/meta.mjs
+      - id: rev
+        if: env.MANUAL == 'true' && env.KIND != 'meta'
         run: node scripts/improve.mjs
       - name: Safety checks
         if: steps.rev.outputs.changed == 'true'

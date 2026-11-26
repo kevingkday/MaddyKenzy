@@ -9,6 +9,21 @@ iPad touch games that rebuild themselves around how a child actually plays. This
 4. The suggestion must pass automated safety and play tests before it's saved.
 5. Nothing changes until the parent taps **Apply** on the grown-ups screen. A dot on the ★ star shows one is waiting. **Undo** returns to the previous version.
 
+## Two loops: it improves the game, and it improves how it improves
+```
+              ┌──────────────── outer loop: the improver improves itself ────────────────┐
+              │                                                                          │
+ play ──▶ scorecard ──▶ playbook rethink ──▶ parent approves ──▶ new playbook ───────────┤
+  ▲          │                                                                           ▼
+  │          └──────────────▶ review (follows the playbook) ──▶ tests ──▶ parent applies ──▶ new game version
+  └─────────────────────────────── inner loop: the game improves ─────────────────────────────────┘
+```
+- **Inner loop (nightly or on demand):** Claude reviews new play, following its current **playbook**, and suggests a config change (one or two levers at a time) with notes per child. It's tested, and the parent applies it.
+- **Scorecard (nightly, no AI):** for every applied change, `scripts/scorecard.mjs` compares play on the new version with the version it replaced: play minutes per session, first-try accuracy, sounds made and lost-interest signals. It gives a verdict of helped, hurt, mixed, no change or too early. The numbers are deterministic, so they can be shown and trusted.
+- **Outer loop:** once 3 or more changes have measured results (and at least 3 days have passed), `scripts/meta.mjs` has Claude read the scorecard against its own past reasoning and **rewrite its playbook**. It keeps rules behind changes that helped, drops what hurt, and cites versions as evidence. The parent approves the new playbook, and every later review follows it.
+
+Starter playbook: `improvers/starter-playbook.md`. Tables: `version_outcomes`, `playbooks`.
+
 ## What's public and what's private
 | Public (this repo) | Private (Cloudflare D1, per family) |
 |---|---|
@@ -30,11 +45,11 @@ functions/api/            Cloudflare Pages Functions (D1 binding "DB")
   review / status         ask for a review, check it  │
   notes                   waiting suggestion + history│ (PIN)
   apply / dismiss / undo  parent decisions           ─┘ (PIN)
-  internal/*              pending, context, propose, run (reviewer only; Bearer INTERNAL_TOKEN)
+  internal/*              families, pending, context, propose, scorecard, playbook, voice, run (jobs only; Bearer INTERNAL_TOKEN)
 lib/server.js             shared helpers: family lookup, PIN check, token check
 db/schema.sql             multi-family schema (db/migrations/ for upgrades)
 improvers/<game>.md       what the improver may change in each game
-scripts/                  daily.mjs (nightly loop) · improve.mjs → test.mjs → publish.mjs · fail.mjs
+scripts/                  daily.mjs (nightly) · scorecard.mjs · improve.mjs → test.mjs → publish.mjs · meta.mjs (playbook) · voice.mjs · fail.mjs
 .github/workflows/improve.yml   nightly schedule + on-demand reviews
 wrangler.toml             Pages settings and D1 binding as code
 ```
@@ -61,7 +76,8 @@ INSERT INTO families (id, name) VALUES ('smith', 'The Smiths');
 INSERT INTO family_domains (domain, family_id) VALUES ('smithkids.com', 'smith');
 INSERT INTO children (id, family_id, display_name, profile_private) VALUES ('sam', 'smith', 'Sam', 'Loves trains; working on letter sounds');
 INSERT INTO family_games (family_id, game_id, active_version, goals_private) VALUES ('smith', 'itsy-big-show', 1, 'Counting to 20');
-INSERT INTO game_versions (family_id, game_id, version, config_json, created_by, status) VALUES ('smith', 'itsy-big-show', 1, '<contents of site/games/itsy-big-show/game.json>', 'seed', 'live');
+INSERT INTO game_versions (family_id, game_id, version, config_json, created_by, status, applied_at) VALUES ('smith', 'itsy-big-show', 1, '<contents of site/games/itsy-big-show/game.json>', 'seed', 'live', unixepoch() * 1000);
+INSERT INTO playbooks (family_id, game_id, version, content, status, applied_at) VALUES ('smith', 'itsy-big-show', 1, '<contents of improvers/starter-playbook.md>', 'live', unixepoch() * 1000);
 ```
 
 ## Using it

@@ -353,6 +353,9 @@ button{font:inherit;color:inherit;border:0;cursor:pointer;touch-action:manipulat
    <div id="sugg"></div>
    <div id="ver"></div>
   </div>
+  <div class="gcard"><h3>How it's learning</h3><p style="margin:4px 0 10px">Each change you apply is measured against the version before it. From those results the improver rewrites its own playbook (the rules it follows when it suggests changes), and you approve that too.</p>
+   <div id="learn"><p>Enter your PIN above to see the scorecard and playbook.</p></div>
+   <div class="grow" style="margin-top:10px"><button class="pill soft" id="rethink">🧠 Rethink the playbook now</button></div><p class="status" id="lStatus"></p></div>
   <div class="gcard"><h3>Voice</h3><p style="margin:4px 0 10px">Lines with a recording play in Dad's voice. Anything without one yet uses the iPad voice and gets added automatically on the next nightly run.</p>
    <div class="grow"><button class="pill soft" id="voiceToggle"></button><button class="pill soft" id="voiceSample">▶ Play samples</button></div><p class="status" id="vStatus"></p></div>
   <div class="gcard"><h3>Play timer</h3><p style="margin:4px 0 10px">When time is up, Itsy sings goodbye and the game rests until a grown-up holds the button.</p>
@@ -874,17 +877,27 @@ async function notes(){
   sg.innerHTML=j.pending?`<div style="background:#fff7d6;border-radius:16px;padding:14px 16px;margin:8px 0"><h3 style="margin-top:0">Suggested changes (v${j.pending.version})</h3><div style="white-space:pre-wrap">${esc(j.pending.notes_private||j.pending.changelog)}</div>
    <div class="grow" style="margin-top:12px"><button class="pill" id="apply" data-v="${j.pending.version}">✅ Apply these changes</button><button class="pill soft" id="dismiss" data-v="${j.pending.version}">Not now</button></div></div>`
    :`<p style="margin:8px 0">No suggestion waiting. ${j.newEvents} new play events since the last review.</p>`;
+  const V={helped:'✅ Helped',hurt:'⚠️ Hurt',mixed:'↔️ Mixed',no_change:'➖ No change',too_early:'⏳ Too early'};
+  $('#learn').innerHTML=`<h3 style="margin-top:4px">Scorecard</h3>`+(j.outcomes.length?j.outcomes.map(o=>`<p style="margin:6px 0"><b>v${o.version}</b> vs v${o.baseline}: <b>${V[o.verdict]||esc(o.verdict)}</b><br><span style="opacity:.8">${esc(o.summary)}</span></p>`).join(''):'<p>No applied changes measured yet. Results appear after a change has been live for a few play sessions.</p>')
+   +(j.playbookPending?`<div style="background:#eef6ff;border-radius:16px;padding:14px 16px;margin:10px 0"><h3 style="margin-top:0">The improver wants to update its playbook (v${j.playbookPending.version})</h3><p style="white-space:pre-wrap;margin:0 0 8px">${esc(j.playbookPending.rationale)}</p><div style="white-space:pre-wrap;font-size:16px;background:#fff;border-radius:12px;padding:10px 12px">${esc(j.playbookPending.content)}</div>
+     <div class="grow" style="margin-top:12px"><button class="pill" id="pbApply" data-v="${j.playbookPending.version}">✅ Use the new playbook</button><button class="pill soft" id="pbDismiss" data-v="${j.playbookPending.version}">Keep the current one</button></div></div>`:'')
+   +(j.playbook?`<details style="margin-top:8px"><summary><b>Current playbook (v${j.playbook.version})</b></summary><div style="white-space:pre-wrap;margin:6px 0 0 1em;font-size:16px">${esc(j.playbook.content)}</div></details>`:'');
   box.innerHTML=`<h3>History (private)</h3>`+j.history.map(v=>`<details style="margin:6px 0"><summary><b>v${v.version}${v.version===j.active?' (live)':''}${v.undone?' (undone)':''}</b>: ${esc(v.changelog)}</summary>${v.notes_private?`<div style="white-space:pre-wrap;margin:6px 0 0 1em">${esc(v.notes_private)}</div>`:''}</details>`).join('');
  }catch(e){sg.innerHTML='';box.innerHTML=`<p style="margin:6px 0 0">${esc(e.message)}</p>`}
 }
 async function reloadCfg(){const j=await fetch('/api/config?game='+GAME,{cache:'no-store'}).then(r=>r.json()).catch(()=>null);if(j&&j.config){CFG=Object.assign({},DEFAULT_CFG,j.config,{pending:j.pending,voice:j.voice});put('itsycfg',CFG);renderHome();stars()}}
 $('#grown').addEventListener('click',async e=>{
+ const pb=e.target.closest('#pbApply,#pbDismiss');if(pb){const st=$('#lStatus');
+  try{await grown(pb.id==='pbApply'?'/api/apply':'/api/dismiss',{version:+pb.dataset.v,kind:'playbook'});st.textContent=pb.id==='pbApply'?'The improver will follow the new playbook from the next review.':'Kept the current playbook.';track(pb.id==='pbApply'?'playbook_applied':'playbook_dismissed',{v:+pb.dataset.v});notes()}catch(err){st.textContent=err.message}return}
  const b=e.target.closest('#apply,#dismiss');if(!b)return;const st=$('#gStatus');
  try{if(b.id==='apply'){await grown('/api/apply',{version:+b.dataset.v});await reloadCfg();st.textContent=`Applied. The game is now on version ${b.dataset.v}.`;track('applied',{to:+b.dataset.v})}
   else{await grown('/api/dismiss',{version:+b.dataset.v});await reloadCfg();st.textContent='Okay, the game stays as it is.';track('dismissed',{v:+b.dataset.v})}
   notes();}catch(err){st.textContent=err.message}
 });
 $('#review').addEventListener('click',requestReview);
+$('#rethink').addEventListener('click',async()=>{const st=$('#lStatus');try{const j=await grown('/api/review',{kind:'meta'});st.textContent='Measuring results and rethinking the playbook… a few minutes.';
+ const tick=async()=>{const r=await fetch('/api/status?game='+GAME+'&run='+j.run,{cache:'no-store'}).then(r=>r.json()).catch(()=>({}));
+  if(r.status==='queued'||r.status==='running'){setTimeout(tick,15000);return}st.textContent=r.status==='done'?'Playbook update ready below.':(r.message||'No update this time.');notes()};tick()}catch(e){st.textContent=e.message}});
 $('#undo').addEventListener('click',async()=>{const st=$('#gStatus');try{const j=await grown('/api/undo');await reloadCfg();st.textContent=j.changed?`Undone. Back on version ${j.version}.`:'Nothing to undo.';notes()}catch(e){st.textContent=e.message}});
 $('#pin').addEventListener('change',notes);
 function voiceBtn(){$('#voiceToggle').textContent=S.voiceOn===false?"Use Dad's voice: off":"Use Dad's voice: on"}

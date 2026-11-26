@@ -6,13 +6,13 @@
 // Logs are public on a public repo, so this script never prints play data or notes.
 import fs from 'node:fs';
 import { execSync } from 'node:child_process';
+import { askClaude } from './improve-api.mjs';
 
 for (const k of ['SITE_URL', 'INTERNAL_TOKEN']) if (!process.env[k]) { console.log(`Missing GitHub secret ${k}. Add it under Settings -> Secrets and variables -> Actions.`); process.exit(1); }
 const out = (k, v) => { if (process.env.GITHUB_OUTPUT) fs.appendFileSync(process.env.GITHUB_OUTPUT, `${k}=${v}\n`); };
 const GAME = process.env.GAME, FAMILY = process.env.FAMILY, RUN = process.env.RUN || '';
 for (const v of [GAME, FAMILY]) if (!/^[a-z0-9-]{1,40}$/.test(v || '')) throw new Error('bad game/family');
 const DIR = `site/games/${GAME}`;
-const MODEL = process.env.MODEL || 'claude-opus-5-5';
 const MIN_NEW_EVENTS = +(process.env.MIN_NEW_EVENTS || (process.env.MANUAL === 'true' ? 5 : 20));
 const api = async (path, body) => {
   if (process.env.CONTEXT_FILE && path.startsWith('/api/internal/context')) return JSON.parse(fs.readFileSync(process.env.CONTEXT_FILE, 'utf8'));
@@ -73,6 +73,7 @@ const RULES = `You review one family's copy of a children's iPad touch game and 
 The parent reads your notes and decides whether to apply your suggested config. Read the family's goals, the children's profiles and the play data (events carry c = child id when known), then suggest a config so the children stay engaged longer AND learn more.
 Success is measured next time by: longer sessions, fewer early exits and boredom signals, more rounds finished, rising first-try accuracy and levels, more vocalisations.
 Compare versions in byVersion: keep what moved the numbers, rework what did not. With little data, make modest changes.
+Follow YOUR PLAYBOOK (rules you wrote from earlier results). Change only one or two levers per suggestion, so the SCORECARD can measure each change on its own.
 
 Hard rules:
 - Only change values the game brief lists as levers. Keep every existing activity id (disable instead of removing).
@@ -80,6 +81,7 @@ Hard rules:
 - Anything the children must understand is spoken or shown as a picture, never text-only.
 - "changelog" is one short generic line about the game change (no names, no personal details).
 - "notes_for_parent" is private and written to the parent in plain, warm language. Structure it as:
+  0. If the SCORECARD has a result for your last applied change, start with one sentence on it (e.g. "Last change (shorter rounds) helped: play per session went from 3 to 4 minutes.").
   1. One short paragraph per child (by first name) on what they focused on, what held their attention, where they struggled or drifted, using the numbers. If play wasn't tagged by child, describe it together.
   2. "I recommend:" then 2-5 bullet lines, each a concrete change in your config and why.
   3. Optionally "Idea for later:" for anything that needs new game code.
@@ -88,31 +90,6 @@ Hard rules:
 Reply with ONLY a JSON object:
 {"notes_for_parent": "...", "changelog": "...", "config": { ...the complete new config... }}`;
 
-async function askClaude(system, user) {
-  if (process.env.MOCK_REPLY) return JSON.parse(fs.readFileSync(process.env.MOCK_REPLY, 'utf8')); // local testing only
-  const r = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: { 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-    body: JSON.stringify({ model: MODEL, max_tokens: 12000, stream: true, system, messages: [{ role: 'user', content: user }] })
-  });
-  if (!r.ok) throw new Error(`Claude API ${r.status}`);
-  let text = '', buf = '';
-  const dec = new TextDecoder();
-  for await (const chunk of r.body) {
-    buf += dec.decode(chunk, { stream: true });
-    let i;
-    while ((i = buf.indexOf('\n')) >= 0) {
-      const line = buf.slice(0, i).trim(); buf = buf.slice(i + 1);
-      if (!line.startsWith('data:')) continue;
-      let ev; try { ev = JSON.parse(line.slice(5)); } catch { continue; }
-      if (ev.type === 'error') throw new Error('Claude API stream error');
-      if (ev.type === 'content_block_delta' && ev.delta?.text) text += ev.delta.text;
-    }
-  }
-  const s = text.indexOf('{'), e = text.lastIndexOf('}');
-  if (s < 0 || e < 0) throw new Error('no JSON in reply');
-  return JSON.parse(text.slice(s, e + 1));
-}
 
 function validate(next, cur) {
   const errs = [];
@@ -141,7 +118,8 @@ const summary = summarise(ctx.events);
 const brief = fs.readFileSync(`improvers/${GAME}.md`, 'utf8');
 const recent = ctx.events.slice(-400).map(({ t, s, v, ...rest }) => ({ t: new Date(t).toISOString().slice(5, 19), ...rest }));
 const sinceText = ctx.since ? new Date(ctx.since).toISOString() : 'the beginning';
-const user = `NEW PLAY SINCE LAST REVIEW: ${ctx.new_since_last} events since ${sinceText}. Focus your notes on this recent play; use older data for comparison.\n\nFAMILY GOALS:\n${ctx.goals || 'none given'}\n\nCHILDREN:\n${JSON.stringify(ctx.children)}\n\nCURRENT CONFIG (live version ${ctx.active_version}):\n${JSON.stringify(ctx.config, null, 1)}\n\nPLAY SUMMARY:\n${JSON.stringify(summary, null, 1)}\n\nRECENT VERSIONS (newest first, with your earlier notes and stats):\n${JSON.stringify(ctx.history.map(h => ({ ...h, stats_json: undefined, stats: h.stats_json ? JSON.parse(h.stats_json) : null })))}\n\nLAST 400 EVENTS:\n${JSON.stringify(recent)}`;
+const book = ctx.playbook?.content || fs.readFileSync('improvers/starter-playbook.md', 'utf8');
+const user = `YOUR PLAYBOOK (v${ctx.playbook?.version || 1}; follow it):\n${book}\n\nSCORECARD (measured effect of each applied change vs the version it replaced):\n${JSON.stringify(ctx.outcomes || [])}\n\nNEW PLAY SINCE LAST REVIEW: ${ctx.new_since_last} events since ${sinceText}. Focus your notes on this recent play; use older data for comparison.\n\nFAMILY GOALS:\n${ctx.goals || 'none given'}\n\nCHILDREN:\n${JSON.stringify(ctx.children)}\n\nCURRENT CONFIG (live version ${ctx.active_version}):\n${JSON.stringify(ctx.config, null, 1)}\n\nPLAY SUMMARY:\n${JSON.stringify(summary, null, 1)}\n\nRECENT VERSIONS (newest first, with your earlier notes and stats):\n${JSON.stringify(ctx.history.map(h => ({ ...h, stats_json: undefined, stats: h.stats_json ? JSON.parse(h.stats_json) : null })))}\n\nLAST 400 EVENTS:\n${JSON.stringify(recent)}`;
 
 const reply = await askClaude(`${RULES}\n\nGAME BRIEF:\n${brief}`, user);
 const cur = ctx.config, next = reply.config;
