@@ -1,0 +1,137 @@
+/* VOICE: warm and confident: a dad's project you can trust, shown with pride
+   IDEA: a picture-book night shelf: the games glow at the top, the "how" reads like a well-made field guide below
+   PICTURE: real game screenshots in the hero; a two-loop diagram drawn in SVG
+   COLOUR and TYPE: night #1b1440, Itsy purple #6b3fd1, sun #ffd23f, berry #ef5d8f, sky #8fdcff, cream #fff8ea; Baloo 2 headings, Nunito body
+   LAYOUT: full-width bands; content max 1180px; cards stack to one column under 760px */
+:root{color-scheme:light;--night:#1b1440;--night2:#2b1d6b;--purple:#6b3fd1;--sun:#ffd23f;--berry:#ef5d8f;--sky:#8fdcff;--grass:#4fb86a;--cream:#fff8ea;--ink:#1d1540;--soft:#5c5480;--line:#e6dfcf}
+*{box-sizing:border-box;min-width:0}
+html{scroll-padding-top:80px;scroll-behavior:smooth}
+body{margin:0;background:var(--cream);color:var(--ink);font:17px/1.6 Nunito,'Segoe UI',system-ui,sans-serif;overflow-x:clip}
+h1,h2,h3{font-family:'Baloo 2','Trebuchet MS',sans-serif;line-height:1.08;text-wrap:balance;margin:0}
+h2{font-size:clamp(32px,4.4vw,46px);font-weight:800}
+h3{font-size:clamp(22px,2.4vw,26px);font-weight:800}
+p{margin:0 0 14px}
+a{color:var(--purple)}
+img{max-width:100%;display:block}
+.wrap{max-width:1180px;margin:0 auto;padding:0 max(5vw,18px)}
+.band{padding:clamp(48px,7vw,96px) 0}
+.kicker{font:800 15px/1 Nunito,sans-serif;color:var(--berry);margin:0 0 10px}
+.lead{font-size:clamp(18px,1.9vw,20px);color:var(--soft);max-width:62ch}
+.btn{display:inline-flex;align-items:center;gap:8px;min-height:48px;padding:12px 24px;border-radius:999px;font:800 17px/1 Nunito,sans-serif;text-decoration:none;border:0;cursor:pointer;white-space:nowrap}
+.btn.play{background:var(--sun);color:var(--ink);box-shadow:0 5px 0 #c99a12}
+.btn.play:active{transform:translateY(3px);box-shadow:0 2px 0 #c99a12}
+.btn.ghost{background:transparent;color:inherit;border:2px solid currentColor}
+.btn:focus-visible,a:focus-visible{outline:3px solid var(--sun);outline-offset:3px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 14px;padding:0;list-style:none}
+.chips li{font-size:14px;font-weight:800;padding:4px 12px;border-radius:999px;background:rgba(107,63,209,.12);color:var(--purple)}
+
+/* header */
+.top{position:sticky;top:0;z-index:20;background:rgba(27,20,64,.92);backdrop-filter:blur(8px);color:#fff}
+.top .wrap{display:flex;align-items:center;gap:18px;min-height:64px}
+.logo{display:flex;align-items:center;gap:10px;color:#fff;text-decoration:none;font:800 21px/1 'Baloo 2',sans-serif;white-space:nowrap}
+.logo svg{width:38px;height:38px;flex:none}
+.nav{display:flex;gap:4px;margin-left:auto;overflow-x:auto;scrollbar-width:none}
+.nav a{color:#e7e2ff;text-decoration:none;font-weight:700;font-size:15px;padding:8px 12px;border-radius:999px;white-space:nowrap}
+.nav a:hover{background:rgba(255,255,255,.1)}
+.nav a.parents{background:var(--sun);color:var(--ink)}
+@media(max-width:860px){.nav a:not(.parents){display:none}}
+
+/* hero: the shelf */
+.hero{background:radial-gradient(110% 80% at 80% 0%,#3b2a8f 0,var(--night) 60%);color:#fff;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background-image:radial-gradient(2px 2px at 12% 20%,#fff8 50%,transparent 51%),radial-gradient(2px 2px at 40% 12%,#fff6 50%,transparent 51%),radial-gradient(1.5px 1.5px at 70% 30%,#fff9 50%,transparent 51%),radial-gradient(2px 2px at 88% 16%,#fff7 50%,transparent 51%),radial-gradient(1.5px 1.5px at 25% 40%,#fff5 50%,transparent 51%);pointer-events:none}
+.hero .wrap{position:relative;padding-top:clamp(36px,5vw,64px);padding-bottom:clamp(48px,6vw,80px)}
+.hero h1{font-size:clamp(38px,5.6vw,64px);font-weight:800;max-width:17ch}
+.hero h1 em{font-style:normal;color:var(--sun)}
+.hero .lead{color:#d6d0f5;margin:16px 0 30px}
+.shelf{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(16px,2.4vw,28px)}
+.game{background:#fff;color:var(--ink);border-radius:26px;overflow:hidden;box-shadow:0 14px 0 rgba(0,0,0,.25);display:flex;flex-direction:column}
+.game .shot{position:relative;aspect-ratio:1180/820;background:#ddd}
+.game .shot img{width:100%;height:100%;object-fit:cover}
+.game .shot .tag{position:absolute;left:14px;bottom:14px;background:rgba(27,20,64,.85);color:#fff;font-weight:800;font-size:14px;padding:5px 12px;border-radius:999px}
+.game .body{padding:20px 22px 24px;display:flex;flex-direction:column;gap:6px;flex:1}
+.game .body p{color:var(--soft)}
+.game .actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:auto}
+.game .actions .ghost{color:var(--purple)}
+.facts{display:flex;flex-wrap:wrap;gap:10px 28px;margin:30px 0 0;padding:0;list-style:none;color:#d6d0f5;font-weight:700}
+.facts b{color:var(--sun)}
+@media(max-width:760px){.shelf{grid-template-columns:minmax(0,1fr)}}
+
+/* two-column feature rows */
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(24px,4vw,56px);align-items:center}
+.row2.top-align{align-items:start}
+@media(max-width:860px){.row2{grid-template-columns:minmax(0,1fr)}}
+.card{background:#fff;border:1px solid var(--line);border-radius:22px;padding:22px 24px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+@media(max-width:900px){.grid3{grid-template-columns:minmax(0,1fr)}}
+.steps{counter-reset:s;list-style:none;padding:0;margin:0;display:grid;gap:14px}
+.steps li{counter-increment:s;position:relative;padding-left:52px}
+.steps li::before{content:counter(s);position:absolute;left:0;top:0;width:36px;height:36px;border-radius:50%;background:var(--purple);color:#fff;font:800 18px/36px 'Baloo 2',sans-serif;text-align:center}
+.steps b{display:block}
+.split.one{grid-template-columns:minmax(0,1fr)}
+.shot-frame img{aspect-ratio:1180/820;width:100%;height:auto;object-fit:cover}
+.shot-frame{border-radius:20px;overflow:hidden;box-shadow:0 10px 30px rgba(27,20,64,.18);border:6px solid #fff;background:#fff}
+
+/* loop diagram */
+.loop{background:var(--night);color:#fff}
+.loop .lead{color:#d6d0f5}
+.fig{position:relative;margin:28px 0 8px}
+.fig svg{width:100%;height:auto;display:block}
+.fig text{font-family:Nunito,sans-serif}
+.loopcards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin-top:24px}
+.loopcards .card{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.14);color:#fff}
+.loopcards .card p{color:#d6d0f5}
+.loopcards h3{color:var(--sun)}
+@media(max-width:760px){.loopcards{grid-template-columns:minmax(0,1fr)}}
+.score{background:#fff;color:var(--ink);border-radius:18px;padding:16px 18px;margin-top:14px}
+.score p,.loopcards .score p{color:var(--ink);margin:4px 0}
+.loopcards .score .note{color:var(--soft);opacity:1}
+.score .v{font-weight:800}
+.note{font-size:14px;opacity:.75}
+
+/* install */
+.install{background:linear-gradient(#bfeaff,var(--sky))}
+.how{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:22px}
+.how .card ol{margin:8px 0 0;padding-left:20px}
+@media(max-width:900px){.how{grid-template-columns:minmax(0,1fr)}}
+.pros{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-top:22px;list-style:none;padding:0}
+.pros li{background:rgba(255,255,255,.7);border-radius:16px;padding:14px 16px;font-weight:700}
+.pros li b{display:block;font:800 20px/1.2 'Baloo 2',sans-serif;color:var(--purple)}
+@media(max-width:900px){.pros{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* privacy + built with */
+.split{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin-top:24px}
+@media(max-width:760px){.split{grid-template-columns:minmax(0,1fr)}}
+.ticks{list-style:none;padding:0;margin:10px 0 0;display:grid;gap:8px}
+.ticks li{padding-left:28px;position:relative}
+.ticks li::before{content:'';position:absolute;left:4px;top:.55em;width:12px;height:7px;border-left:3px solid var(--grass);border-bottom:3px solid var(--grass);transform:rotate(-45deg)}
+.stack{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px;padding:0;list-style:none}
+.stack li{background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px 14px}
+.stack b{display:block}
+.stack span{font-size:14px;color:var(--soft)}
+
+/* game pages */
+.gamehero{color:#fff}
+.gamehero.itsy{background:linear-gradient(160deg,#6b3fd1,#2b1d6b)}
+.gamehero.kart{background:linear-gradient(160deg,#ef5d8f,#33285e 70%)}
+.gamehero .wrap{padding-top:clamp(36px,5vw,64px);padding-bottom:clamp(40px,5vw,64px)}
+.gamehero h1{font-size:clamp(40px,6vw,66px);font-weight:800}
+.gamehero .lead{color:#efeaff;margin:14px 0 22px}
+.gamehero .chips li{background:rgba(255,255,255,.18);color:#fff}
+.acts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin-top:24px}
+.acts .card{display:grid;grid-template-columns:120px minmax(0,1fr);gap:16px;align-items:start}
+.acts .card img{border-radius:14px;aspect-ratio:1180/820;object-fit:cover;width:120px}
+.acts .card.noimg{grid-template-columns:minmax(0,1fr)}
+.acts h3{font-size:22px;margin-bottom:4px}
+.acts .teaches{font-size:14px;font-weight:800;color:var(--berry)}
+@media(max-width:860px){.acts{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:420px){.acts .card{grid-template-columns:minmax(0,1fr)}.acts .card img{width:100%}}
+table.levers{width:100%;border-collapse:collapse;font-size:16px;margin-top:12px}
+.levers th,.levers td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+.levers th{font-size:14px;color:var(--soft)}
+.levers td:first-child{font-weight:800;white-space:nowrap}
+.scroll{overflow-x:auto}
+
+footer.site{background:var(--night);color:#d6d0f5;padding:40px 0;font-size:15px}
+footer.site .wrap{display:flex;flex-wrap:wrap;gap:12px 28px;justify-content:space-between;align-items:center}
+footer.site a{color:#fff}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important;animation:none!important}}

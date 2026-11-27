@@ -1,97 +1,187 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Maddy &amp; Kenzy's Game Shelf</title>
-  <meta name="description" content="A cozy, ad-free collection of installable PWA games for Maddy and Kenzy.">
-  <meta name="theme-color" content="#fcfaf2">
-  <link rel="icon" type="image/png" href="games/itsy-big-show/icon-192.png">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Maddy &amp; Kenzy's Games: games that learn how kids play</title>
+<meta name="description" content="Two iPad games a dad built for his twin daughters. Every night, Claude reviews how they played and suggests changes a parent approves, so the games keep getting better at holding attention and teaching. Installable without an app store.">
+<meta name="theme-color" content="#1b1440">
+<link rel="icon" type="image/png" href="/games/itsy-big-show/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/site.css">
+<style>@media(max-width:600px){.fig{display:none}}</style>
 </head>
 <body>
-  <div class="page-shell">
-    <header class="site-header">
-      <div class="brand">
-        <div class="brand-mark" aria-hidden="true">
-          <svg viewBox="0 0 64 64" width="44" height="44" fill="none">
-            <rect x="4" y="8" width="56" height="48" rx="16" fill="#ffd23f" stroke="#1f2533" stroke-width="3.5"/>
-            <circle cx="24" cy="30" r="5" fill="#1f2533"/>
-            <circle cx="40" cy="30" r="5" fill="#1f2533"/>
-            <circle cx="22.5" cy="28.5" r="1.6" fill="#ffffff"/>
-            <circle cx="38.5" cy="28.5" r="1.6" fill="#ffffff"/>
-            <path d="M23 41c2.5 4 15.5 4 18 0" stroke="#1f2533" stroke-width="3.5" stroke-linecap="round"/>
-            <circle cx="15" cy="36" r="3.5" fill="#ff6b6b" opacity="0.65"/>
-            <circle cx="49" cy="36" r="3.5" fill="#ff6b6b" opacity="0.65"/>
-          </svg>
-        </div>
-        <div>
-          <h1>Maddy &amp; Kenzy's Games</h1>
-          <p class="subtitle">Tap a game to play, or save it to your tablet home screen for offline play.</p>
-        </div>
-      </div>
+<header class="top"><div class="wrap">
+ <a class="logo" href="/"><svg viewBox="0 0 120 120" aria-hidden="true"><g fill="none" stroke="#ffd23f" stroke-width="7" stroke-linecap="round"><path d="M36 64Q16 46 6 58"/><path d="M33 72Q10 66 3 80"/><path d="M34 81Q13 88 9 104"/><path d="M84 64Q104 46 114 58"/><path d="M87 72Q110 66 117 80"/><path d="M86 81Q107 88 111 104"/></g><ellipse cx="60" cy="72" rx="31" ry="27" fill="#8b66e6"/><circle cx="48" cy="66" r="10" fill="#fff"/><circle cx="72" cy="66" r="10" fill="#fff"/><circle cx="50" cy="68" r="5.5" fill="#1d1540"/><circle cx="74" cy="68" r="5.5" fill="#1d1540"/></svg>Maddy &amp; Kenzy's Games</a>
+ <nav class="nav" aria-label="Sections"><a href="#games">Games</a><a href="#learns">How it learns</a><a href="#voice">Voice</a><a href="#install">No app store</a><a href="#privacy">Privacy</a><a class="parents" href="/app/">Parents</a></nav>
+</div></header>
 
-      <div class="header-actions">
-        <button id="install-guide-btn" class="btn btn-secondary" type="button">
-          Save to iPad / Phone
-        </button>
-      </div>
-    </header>
+<main>
+<section class="hero" id="games"><div class="wrap">
+ <h1>Games that <em>learn</em> from how kids actually play.</h1>
+ <p class="lead">Two iPad games a dad built for his twin daughters. Every night, Claude reviews how they played and suggests changes. Once a parent approves, the game rebuilds itself around what holds their attention and helps them learn.</p>
+ <div class="shelf">
+  <article class="game">
+   <div class="shot"><img src="/img/itsy-bubbles.webp" alt="Itsy's Big Show: bubbles with a number, a banana and a teddy bear float up to be popped, beside Itsy the spider on a water spout" width="1180" height="820"><span class="tag">Talks &amp; listens</span></div>
+   <div class="body">
+    <h3>Itsy's Big Show</h3>
+    <ul class="chips"><li>Letters &amp; sounds</li><li>Numbers</li><li>Talking</li><li>Itsy Bitsy Spider</li></ul>
+    <p>Pop bubbles, help Itsy climb the spout, find letters by their sounds, and make any sound to make Itsy dance. Every line is spoken in a parent's own voice.</p>
+    <div class="actions"><a class="btn play" href="/games/itsy-big-show/">▶ Play</a><a class="btn ghost" href="/about/itsy-big-show/">How it plays</a></div>
+   </div>
+  </article>
+  <article class="game">
+   <div class="shot"><img src="/img/kart-bed.webp" alt="Itsy &amp; Sleepy Kart: a teddy bear and bunnies race karts along a moonlit purple road, with a big touch circle and a BEEP button" width="1180" height="820"><span class="tag">One joystick or one finger</span></div>
+   <div class="body">
+    <h3>Itsy &amp; Sleepy Kart</h3>
+    <ul class="chips"><li>Driving</li><li>Joystick</li><li>Touch</li><li>Lullabies</li></ul>
+    <p>A gentle 3D race through the Rainy Garden or along Sleepy Road. Push to go, tilt to steer, and any button honks. No menus to fall into, and friends always wait.</p>
+    <div class="actions"><a class="btn play" href="/games/itsy-sleepy-kart/">▶ Play</a><a class="btn ghost" href="/about/itsy-sleepy-kart/">How it plays</a></div>
+   </div>
+  </article>
+ </div>
+ <ul class="facts"><li><b>Nightly</b> reviews by Claude</li><li><b>Every change</b> approved by a parent</li><li><b>Measured</b> before and after</li><li><b>No app store</b>: installs from the browser</li></ul>
+</div></section>
 
-    <main>
-      <section class="shelf-controls" id="shelf-controls" hidden>
-        <label class="search-wrap" for="game-search">
-          <span class="sr-only">Search games</span>
-          <input id="game-search" type="search" placeholder="Find a game..." autocomplete="off">
-        </label>
-        <span class="game-count" id="game-count"></span>
-      </section>
+<section class="band" id="what"><div class="wrap row2">
+ <div>
+  <p class="kicker">What this is</p>
+  <h2>A game that keeps rewriting itself, with a parent holding the pen.</h2>
+ </div>
+ <div>
+  <p class="lead">Most kids' apps are designed once, for the average child. These games start out that way too, then adapt to the specific kids playing them: what they tap first, where they lose interest, which sounds they try, which letters they keep missing.</p>
+  <p>They're made for young children, including early talkers and kids who drift after a couple of taps. The first job is to grab attention. Learning (letters, sounds, counting, adding one, saying words) is built on top of that.</p>
+ </div>
+</div></section>
 
-      <section aria-label="Game library">
-        <div id="games-grid" class="games-grid" aria-live="polite"></div>
-        <p id="empty-state" class="empty-state" hidden>No games match that search yet.</p>
-      </section>
-    </main>
-
-    <footer class="site-footer">
-      <p>Made for Maddy &amp; Kenzy &middot; Ad-free &amp; offline-ready</p>
-    </footer>
+<section class="band loop" id="learns"><div class="wrap">
+ <p class="kicker" style="color:var(--sun)">How it learns</p>
+ <h2>Two loops: it improves the game, and it improves how it improves.</h2>
+ <p class="lead" style="margin-top:14px">The inner loop changes the game. The outer loop measures those changes and rewrites the rules the AI follows when making them. A parent approves every step.</p>
+ <div class="fig" role="img" aria-label="Inner loop: kids play, nightly review, safety tests, parent applies, back to play. Outer loop: each applied change is measured on a scorecard; after enough results Claude rewrites its playbook, the parent approves, and reviews follow the new rules.">
+  <svg viewBox="0 0 1000 440">
+   <defs>
+    <marker id="a1" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#ffd23f"/></marker>
+    <marker id="a2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#ef5d8f"/></marker>
+   </defs>
+   <g fill="none" stroke-width="4">
+    <path d="M250 95H360" stroke="#ffd23f" marker-end="url(#a1)"/>
+    <path d="M465 135V280" stroke="#ffd23f" marker-end="url(#a1)"/>
+    <path d="M360 325H250" stroke="#ffd23f" marker-end="url(#a1)"/>
+    <path d="M155 280V135" stroke="#ffd23f" marker-end="url(#a1)"/>
+    <path d="M155 365V410H815V365" stroke="#ef5d8f" stroke-dasharray="10 8" marker-end="url(#a2)"/>
+    <path d="M815 280V140" stroke="#ef5d8f" marker-end="url(#a2)"/>
+    <path d="M720 75H575" stroke="#ef5d8f" marker-end="url(#a2)"/>
+   </g>
+   <g font-weight="800" text-anchor="middle">
+    <rect x="60" y="55" width="190" height="80" rx="18" fill="#6b3fd1"/><text x="155" y="90" fill="#fff" font-size="22">Kids play</text><text x="155" y="116" fill="#d6d0f5" font-size="15" font-weight="700">every tap is logged</text>
+    <rect x="370" y="55" width="200" height="80" rx="18" fill="#6b3fd1"/><text x="470" y="90" fill="#fff" font-size="22">Nightly review</text><text x="470" y="116" fill="#d6d0f5" font-size="15" font-weight="700">Claude suggests changes</text>
+    <rect x="370" y="285" width="200" height="80" rx="18" fill="#6b3fd1"/><text x="470" y="320" fill="#fff" font-size="22">Safety tests</text><text x="470" y="346" fill="#d6d0f5" font-size="15" font-weight="700">must pass to be offered</text>
+    <rect x="60" y="285" width="190" height="80" rx="18" fill="#ffd23f"/><text x="155" y="320" fill="#1d1540" font-size="22">Parent applies</text><text x="155" y="346" fill="#5c5480" font-size="15" font-weight="700">or says "not now"</text>
+    <rect x="720" y="285" width="200" height="80" rx="18" fill="#ef5d8f"/><text x="820" y="320" fill="#fff" font-size="22">Scorecard</text><text x="820" y="346" fill="#ffe3ee" font-size="15" font-weight="700">did that change help?</text>
+    <rect x="720" y="35" width="200" height="100" rx="18" fill="#ef5d8f"/><text x="820" y="72" fill="#fff" font-size="22">Playbook rethink</text><text x="820" y="98" fill="#ffe3ee" font-size="15" font-weight="700">Claude rewrites its rules</text><text x="820" y="120" fill="#ffe3ee" font-size="15" font-weight="700">parent approves</text>
+    <text x="485" y="432" fill="#ffb3cd" font-size="15" font-weight="700">each applied change is measured against the version before it</text>
+    <text x="905" y="215" fill="#ffb3cd" font-size="15" font-weight="700" text-anchor="end">after 3+ results</text>
+    <text x="648" y="62" fill="#ffb3cd" font-size="15" font-weight="700">new rules</text>
+   </g>
+  </svg>
+ </div>
+ <div class="loopcards">
+  <div class="card">
+   <h3>Inner loop: the game improves</h3>
+   <ol class="steps" style="margin-top:12px">
+    <li><b>Kids play.</b><p>Taps, answers, sounds, pops, time per activity, signs of drifting attention, all tagged to the child who's playing.</p></li>
+    <li><b>Nightly review.</b><p>Claude reads the new play and the family's goals and writes a suggestion: plain notes per child plus a changed game setup, one or two changes at a time.</p></li>
+    <li><b>Safety tests.</b><p>The suggestion is loaded into the real game and played automatically on iPad-sized screens. If anything breaks, it's thrown away.</p></li>
+    <li><b>Parent applies.</b><p>Nothing changes until a parent taps <i>Apply</i>. Undo is always one tap away.</p></li>
+   </ol>
   </div>
+  <div class="card">
+   <h3>Outer loop: the improver improves</h3>
+   <p>A plain calculation, with no AI involved, compares how the kids played on each applied version against the one before: minutes per session, first-try accuracy, sounds made and signs of lost interest. Each change gets a verdict: helped, hurt, mixed or no change.</p>
+   <p>Once enough results are in, Claude reads that scorecard against its own earlier reasoning and rewrites its <b>playbook</b>, the rules it follows when it suggests changes. It keeps what worked and drops what didn't. The parent approves the new playbook too.</p>
+   <div class="score">
+    <p class="note">Example scorecard entry</p>
+    <p><span class="v">v4 vs v3: ✅ Helped.</span> Play per session 3.2 → 4.4 min (+38%); first-try right 61% → 64%; lost-interest signals 2.1 → 1.2.</p>
+   </div>
+  </div>
+ </div>
+</div></section>
 
-  <dialog id="install-dialog" class="install-dialog" aria-labelledby="install-dialog-title">
-    <div class="dialog-head">
-      <h2 id="install-dialog-title">Save any game as an app</h2>
-      <button id="close-dialog-btn" class="icon-close" type="button" aria-label="Close guide">&times;</button>
-    </div>
-    <p class="dialog-intro">
-      Each game is a standalone Progressive Web App (PWA). Once opened, it works full-screen and offline!
-    </p>
-    <div class="guide-steps">
-      <div class="guide-box">
-        <h3>iPad &amp; iPhone (Safari)</h3>
-        <ol>
-          <li>Tap <strong>Play Game</strong> to open the game.</li>
-          <li>Tap the <strong>Share</strong> button (square with an arrow).</li>
-          <li>Choose <strong>Add to Home Screen</strong>.</li>
-        </ol>
-      </div>
-      <div class="guide-box">
-        <h3>Android &amp; Chromebook (Chrome)</h3>
-        <ol>
-          <li>Tap <strong>Play Game</strong> to open the game.</li>
-          <li>Tap the <strong>menu</strong> (&#8942;) or install icon in the address bar.</li>
-          <li>Choose <strong>Install app</strong> or <strong>Add to Home screen</strong>.</li>
-        </ol>
-      </div>
-    </div>
-    <div class="dialog-foot">
-      <button id="done-dialog-btn" class="btn btn-primary" type="button">Got it</button>
-    </div>
-  </dialog>
+<section class="band" id="voice"><div class="wrap row2">
+ <div>
+  <p class="kicker">Interactive voice</p>
+  <h2>It talks in a parent's voice, and it listens back.</h2>
+  <div class="split one" style="margin-top:20px">
+   <div class="card">
+    <h3>Talks</h3>
+    <p>Every line Itsy says, about 450 of them (questions, letter sounds, counting, praise, "Can you say moo?"), plays in a parent's own cloned voice, made once with ElevenLabs.</p>
+    <p class="note" style="margin:0">If a line has no recording yet, the device voice says it, and it's recorded automatically that night.</p>
+   </div>
+   <div class="card">
+    <h3>Listens</h3>
+    <p>In <b>Say It!</b>, Itsy shows a picture and asks the child to say it. <b>Any sound counts</b>: a babble or a try makes Itsy jump and sparkle. It rewards the attempt, not the perfect word.</p>
+    <p class="note" style="margin:0">The microphone only measures loudness on the device. Nothing is recorded or sent.</p>
+   </div>
+  </div>
+ </div>
+ <div class="shot-frame"><img src="/img/itsy-say.webp" alt="Say It! screen: a big star-eyed face and the word wow above Itsy the spider, who dances when the child makes a sound" width="1180" height="820"></div>
+</div></section>
 
-  <script src="app.js" defer></script>
+<section class="band install" id="install"><div class="wrap">
+ <p class="kicker">No app store</p>
+ <h2>Installs from the browser. No approval, no waiting.</h2>
+ <p class="lead" style="margin-top:12px">Each game is a progressive web app (PWA): a website that installs like an app. It opens full-screen from its own home-screen icon and works offline. An improvement made tonight is on the iPad tomorrow, without an App Store or Play Store review.</p>
+ <ul class="pros"><li><b>Instant updates</b>Every approved change arrives on the next launch.</li><li><b>Works offline</b>Car trips and waiting rooms included.</li><li><b>No ads or purchases</b>Nothing to tap by accident.</li><li><b>One codebase</b>iPad, iPhone, Android and computers.</li></ul>
+ <div class="how">
+  <div class="card"><h3>iPad &amp; iPhone</h3><ol><li>Open a game in <b>Safari</b>.</li><li>Tap <b>Share</b> (the square with an arrow).</li><li>Choose <b>Add to Home Screen</b>.</li></ol></div>
+  <div class="card"><h3>Android &amp; Chromebook</h3><ol><li>Open a game in <b>Chrome</b>.</li><li>Tap the <b>⋮</b> menu or the install icon.</li><li>Choose <b>Install app</b>.</li></ol></div>
+  <div class="card"><h3>Computer</h3><ol><li>Open a game in Chrome or Edge.</li><li>Click the <b>install</b> icon in the address bar.</li><li>Plug in a joystick for the kart.</li></ol></div>
+ </div>
+</div></section>
+
+<section class="band" id="privacy"><div class="wrap">
+ <p class="kicker">Privacy &amp; safety</p>
+ <h2>Public code. Private kids.</h2>
+ <div class="split">
+  <div class="card">
+   <h3>What's protected</h3>
+   <ul class="ticks">
+    <li>Names, notes, goals and the AI's notes about each child are encrypted, with a separate key for every family, kept outside the database.</li>
+    <li><b>Private mode:</b> a family can lock everything with a passphrase only they know. Not even the site owner can read it.</li>
+    <li>Families can download all their data or delete it permanently at any time.</li>
+    <li>The code is open source. The kids' data never goes into it.</li>
+   </ul>
+  </div>
+  <div class="card">
+   <h3>What keeps it kid-safe</h3>
+   <ul class="ticks">
+    <li>A parent approves every change. The AI only ever suggests.</li>
+    <li>Changes stay within set limits and must pass automated play tests on iPad screens.</li>
+    <li>Leaving a game needs a press-and-hold, so a stray tap does nothing.</li>
+    <li>An optional play timer ends with a goodbye song.</li>
+    <li>No ads, no purchases, no links out, no chat.</li>
+   </ul>
+  </div>
+ </div>
+ <h3 style="margin-top:36px">Built with</h3>
+ <ul class="stack">
+  <li><b>Claude</b><span>nightly reviews, playbook rewrites, first-day setup</span></li>
+  <li><b>Cloudflare Pages + D1</b><span>hosting and per-family encrypted data</span></li>
+  <li><b>GitHub Actions</b><span>the nightly job and safety tests</span></li>
+  <li><b>ElevenLabs</b><span>the parent's voice</span></li>
+  <li><b>Three.js</b><span>the 3D kart</span></li>
+  <li><b>Web Audio</b><span>music, effects and listening</span></li>
+ </ul>
+ <p style="margin-top:22px">The full source is public: <a href="https://github.com/kevingkday/MaddyKenzy">github.com/kevingkday/MaddyKenzy</a>. Families in the invite-only beta sign in at the <a href="/app/">parent dashboard</a>.</p>
+</div></section>
+</main>
+
+<footer class="site"><div class="wrap">
+ <span>Made with love for Maddy &amp; Kenzy · no ads · works offline</span>
+ <span><a href="/about/itsy-big-show/">Itsy's Big Show</a> · <a href="/about/itsy-sleepy-kart/">Itsy &amp; Sleepy Kart</a> · <a href="/app/">Parents</a> · <a href="https://github.com/kevingkday/MaddyKenzy">Source</a></span>
+</div></footer>
 </body>
 </html>
