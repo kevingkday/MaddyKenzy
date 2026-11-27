@@ -12,5 +12,19 @@
       "Talking",
       "Music"
     ]
+  },
+  {
+    "slug": "itsy-sleepy-kart",
+    "title": "Itsy & Sleepy Kart",
+    "description": "A gentle 3D kart race through the Rainy Garden or along Sleepy Road. Drive with a flight-sim joystick on the computer, or drag the big circle on an iPad. No menus to fall into.",
+    "path": "games/itsy-sleepy-kart/",
+    "icon": "games/itsy-sleepy-kart/icon-192.png",
+    "accent": "#ef5d8f",
+    "tags": [
+      "Driving",
+      "Joystick",
+      "Touch",
+      "Music"
+    ]
   }
 ]
