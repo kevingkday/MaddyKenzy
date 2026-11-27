@@ -7,7 +7,7 @@ export const api = async (path, body) => {
     headers: { authorization: `Bearer ${process.env.INTERNAL_TOKEN}`, 'content-type': 'application/json' },
     body: body ? JSON.stringify(body) : undefined
   });
-  if (!r.ok) throw new Error(`${path} -> ${r.status}`);
+  if (!r.ok) { const why = (await r.json().catch(() => ({}))).error; throw new Error(`${path} -> ${r.status}${why ? ': ' + why : ''}`); }
   return r.json();
 };
 

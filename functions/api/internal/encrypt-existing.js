@@ -5,7 +5,7 @@ import { json, internalOk, randomToken } from '../../../lib/server.js';
 import { masterReady, newDek, lockWithMaster, familyKey, enc, isEnc, b64 } from '../../../lib/crypto.js';
 export async function onRequestPost({ request, env }) {
   if (!internalOk(request, env)) return json({ error: 'no' }, 401);
-  if (!masterReady(env)) return json({ error: 'MASTER_KEY is not set' }, 503);
+  if (!masterReady(env)) return json({ error: env.MASTER_KEY ? 'MASTER_KEY is set but is not 32 bytes (use 44 base64 or 64 hex characters)' : 'MASTER_KEY is not set' }, 503);
   const done = [];
   const { results: fams } = await env.DB.prepare('SELECT id, name, dek_wrapped FROM families WHERE private_mode = 0').all();
   for (const f of fams) {
