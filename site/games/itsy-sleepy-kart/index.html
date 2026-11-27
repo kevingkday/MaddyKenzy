@@ -102,6 +102,12 @@ html,body{overscroll-behavior:none;-webkit-user-select:none;user-select:none;-we
 #leave circle{fill:none;stroke:var(--sun);stroke-width:6;stroke-dasharray:176;stroke-dashoffset:176}
 #leave.holding circle{transition:stroke-dashoffset 1.5s linear;stroke-dashoffset:0}
 #hud{padding-left:calc(90px + env(safe-area-inset-left,0px))}
+#who{background:rgba(27,33,69,.85)}
+.kids{display:flex;gap:clamp(12px,4vw,48px);justify-content:center}
+.kid{position:relative;overflow:hidden;width:min(40vw,320px);aspect-ratio:1;border:0;border-radius:32px;cursor:pointer;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  font-family:var(--font-display);font-weight:800;box-shadow:0 10px 0 rgba(0,0,0,.25);transition:transform .15s}
+.kid b{font-size:clamp(4rem,16vmin,9rem);line-height:1}.kid span{font-size:clamp(1.2rem,4vmin,2rem)}
+.kid.sel{transform:scale(1.06)}.kid .bar{position:absolute;left:0;bottom:0;height:14px;width:0;background:var(--sun)}
 @media (prefers-reduced-motion:reduce){#hint,.arrows svg{animation:none!important}.world{transition:none}}
 </style>
 
@@ -109,7 +115,7 @@ html,body{overscroll-behavior:none;-webkit-user-select:none;user-select:none;-we
   <canvas id="game"></canvas>
 
   <div id="hud" hidden>
-    <div class="pill" id="laps"><span></span><span></span><span></span></div>
+    <div class="pill" id="laps"></div>
     <div class="pill" id="pips"></div>
   </div>
 
@@ -125,6 +131,13 @@ html,body{overscroll-behavior:none;-webkit-user-select:none;user-select:none;-we
   <button id="horn" hidden type="button" aria-label="Horn">BEEP</button>
   <button id="leave" hidden type="button" aria-label="Grown-ups: hold to go back to the game shelf"><svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="28"/></svg>hold</button>
 
+  <div class="screen" id="who" hidden>
+    <div class="pickwrap"><div class="kids" id="kids"></div>
+      <div class="arrows" aria-hidden="true">
+        <svg viewBox="0 0 90 60"><path d="M6 30L40 4v16h44v20H40v16z" fill="#ffc93c" stroke="#221c3a" stroke-width="5" stroke-linejoin="round"/></svg>
+        <svg viewBox="0 0 90 60"><path d="M84 30L50 4v16H6v20h44v16z" fill="#ffc93c" stroke="#221c3a" stroke-width="5" stroke-linejoin="round"/></svg>
+      </div></div>
+  </div>
   <div class="screen" id="picker" hidden>
     <div class="pickwrap">
       <div class="worlds">
@@ -197,7 +210,29 @@ html,body{overscroll-behavior:none;-webkit-user-select:none;user-select:none;-we
 'use strict';
 const $=id=>document.getElementById(id);
 const stage=$('stage'), canvas=$('game');
-const HW=8, MAX=34, LAPS=3, PER_LAP=5;
+const HW=8;
+/* ---------- this family's settings (improved by the nightly review; see game.json) ---------- */
+const GAME='itsy-sleepy-kart';
+const DEFAULT_CFG=/*CFG*/{"version":1,"max_speed":34,"laps":3,"items_per_lap":5,"item_magnet":3.5,"friend_speed":23,"hint_after_idle_seconds":2.5,"auto_pick_seconds":9,"celebrate_seconds":9,"worlds":[{"id":"spider","title":"Rainy Garden","enabled":true,"weight":1},{"id":"bed","title":"Sleepy Road","enabled":true,"weight":1}]}/*END*/;
+let CFG=DEFAULT_CFG;
+try{ const c=JSON.parse(localStorage.getItem('kartcfg')||'null'); if(c&&c.worlds) CFG=Object.assign({},DEFAULT_CFG,c); }catch(e){}
+let MAX=CFG.max_speed, LAPS=CFG.laps, PER_LAP=CFG.items_per_lap;
+function applyCfg(c){ CFG=Object.assign({},DEFAULT_CFG,c); MAX=CFG.max_speed; LAPS=CFG.laps; PER_LAP=CFG.items_per_lap;
+  try{ localStorage.setItem('kartcfg',JSON.stringify(CFG)); }catch(e){} if(typeof buildHudPips==='function') buildHudPips(); if(typeof showWorlds==='function') showWorlds(); }
+/* a kid device linked to a family sends its token with our own requests (linking happens in Itsy's Big Show grown-ups) */
+let DEV=null; try{ DEV=localStorage.getItem('itsydev'); }catch(e){}
+{ const _f=window.fetch.bind(window); window.fetch=(u,o={})=>{ if(DEV&&typeof u==='string'&&/^\/api\//.test(u)) o={...o,headers:{...(o.headers||{}),'x-device':DEV}}; return _f(u,o); }; }
+fetch('/api/config?game='+GAME,{cache:'no-store'}).then(r=>r.ok?r.json():null).then(j=>{ if(j&&j.config&&j.config.worlds) applyCfg(j.config); }).catch(()=>{});
+/* play tracking: same shape as Itsy's Big Show, sent to /api/log for this family's reviews */
+const SESSION=Date.now().toString(36); let child=null, mode=null, openT=0, Q=[], tally={collect:0,bump:0,splash:0,boing:0,honk:0};
+try{ Q=JSON.parse(localStorage.getItem('kartq')||'[]'); }catch(e){}
+function track(e,d){ Q.push(Object.assign({t:Date.now(),g:GAME,s:SESSION,v:CFG.version,c:child,a:mode,e:e},d||{})); if(Q.length>3000) Q=Q.slice(-3000); try{ localStorage.setItem('kartq',JSON.stringify(Q)); }catch(e){} }
+async function flush(){ if(!Q.length) return; const batch=Q.slice(0,500);
+  try{ const r=await fetch('/api/log',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({events:batch}),keepalive:true}); if(r.ok){ Q=Q.slice(batch.length); try{ localStorage.setItem('kartq',JSON.stringify(Q)); }catch(e){} } }catch(e){} }
+setInterval(flush,20000);
+function openWorld(w){ closeWorld('switch'); mode=w; openT=Date.now(); tally={collect:0,bump:0,splash:0,boing:0,honk:0}; track('open'); }
+function closeWorld(reason){ if(!mode||!openT) return; track('close',Object.assign({secs:Math.round((Date.now()-openT)/1000),reason:reason,laps:W?W.P.lap:0},tally)); openT=0; }
+document.addEventListener('visibilitychange',()=>{ if(document.hidden){ closeWorld('hide'); mode=null; flush(); } });
 const rand=(a,b)=>a+Math.random()*(b-a);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 
@@ -283,11 +318,11 @@ const now=()=>A.ctx?A.ctx.currentTime:0;
 const midi=m=>440*Math.pow(2,(m-69)/12);
 let honkT=0;
 const sfx={
-  honk(){ if(performance.now()-honkT<250) return; honkT=performance.now(); tone(370,now(),.25,'square',.09); tone(466,now(),.25,'square',.09); },
-  collect(){ tone(784,now(),.14,'sine',.2); tone(1175,now()+.09,.22,'sine',.2); },
-  splash(){ noise(.45,.5,900); },
-  boing(){ tone(180,now(),.45,'sine',.3,620); },
-  bump(){ tone(120,now(),.16,'sine',.3,70); },
+  honk(){ if(performance.now()-honkT<250) return; honkT=performance.now(); tally.honk++; tone(370,now(),.25,'square',.09); tone(466,now(),.25,'square',.09); },
+  collect(){ tally.collect++; track('collect'); tone(784,now(),.14,'sine',.2); tone(1175,now()+.09,.22,'sine',.2); },
+  splash(){ tally.splash++; noise(.45,.5,900); },
+  boing(){ tally.boing++; tone(180,now(),.45,'sine',.3,620); },
+  bump(){ tally.bump++; tone(120,now(),.16,'sine',.3,70); },
   tuck(){ tone(1046,now(),.5,'sine',.14); tone(1318,now()+.12,.6,'sine',.12); },
   fanfare(){ [60,64,67,72,67,72,76].forEach((m,i)=>tone(midi(m+12),now()+i*.14,.4,'triangle',.18)); }
 };
@@ -495,7 +530,7 @@ function buildWorld(kind){
   w.P={rig:makeKart(th.kart[0],th.kart[1],drv),dist:0,lat:0,speed:0,steer:0,hopY:0,hopV:0,idle:0,lap:0,bumpCd:0};
   scene.add(w.P.rig.root);
   w.ais=th.friends.map((f,i)=>{ const rig=makeKart(f[1],f[2],makeAnimal(f[0])); scene.add(rig.root);
-    return {rig:rig,dist:9+i*7,lat:[-4,4,0][i],latT:[-4,4,0][i],speed:0,base:23+i*2.5,next:rand(1,4)}; });
+    return {rig:rig,dist:9+i*7,lat:[-4,4,0][i],latT:[-4,4,0][i],speed:0,base:CFG.friend_speed+i*2.5,next:rand(1,4)}; });
   W=w; spawnItems(0); snapCamera(); updateHud();
   return w;
 }
@@ -508,7 +543,8 @@ function spawnItems(lap){
 
 /* ---------- HUD ---------- */
 const pipsEl=$('pips'), lapsEl=$('laps');
-for(let i=0;i<LAPS*PER_LAP;i++) pipsEl.appendChild(document.createElement('span'));
+function buildHudPips(){ pipsEl.innerHTML=''; lapsEl.innerHTML=''; for(let i=0;i<LAPS*PER_LAP;i++) pipsEl.appendChild(document.createElement('span')); for(let i=0;i<LAPS;i++) lapsEl.appendChild(document.createElement('span')); }
+buildHudPips();
 function updateHud(){ if(!W) return;
   for(let i=0;i<pipsEl.children.length;i++) pipsEl.children[i].className=i<W.collected?'on':'';
   for(let i=0;i<LAPS;i++) lapsEl.children[i].className=i<W.P.lap?'on':''; }
@@ -518,16 +554,19 @@ let state='setup', lastWorld='spider', fin=0;
 const pick={sel:null,fill:0,auto:0};
 const camLook=new THREE.Vector3();
 function snapCamera(){ const w=W; place(w.tr,w.P.dist-11,0,v1,v2); camera.position.set(v1.x,5.2,v1.z); place(w.tr,w.P.dist+12,0,camLook,v2); camLook.y=1.5; camera.lookAt(camLook); }
-function startRace(kind){
+function startRace(kind,via){
+  if(!CFG.worlds.some(w=>w.id===kind&&w.enabled)) kind=defaultWorld();
   lastWorld=kind; buildWorld(kind); setMusic(kind); state='race'; fin=0; showTouch(true);
+  openWorld(kind); track('pick',{world:kind,via:via||'stick'});
   $('picker').hidden=true; $('hud').hidden=false; stage.classList.add('playing');
 }
 function openPicker(auto){
-  state='pick'; pick.sel=null; pick.fill=0; pick.auto=auto?9:0;
+  showWorlds(); if(state==='race') closeWorld('switch');
+  state='pick'; pick.sel=null; pick.fill=0; pick.auto=auto?CFG.auto_pick_seconds:0;
   $('picker').hidden=false; $('hud').hidden=true; $('hint').hidden=true; stage.classList.remove('playing');
 }
 function finishRace(){
-  const w=W; state='finish'; fin=0; sfx.fanfare(); $('hint').hidden=true;
+  const w=W; state='finish'; fin=0; track('round'); closeWorld('finish'); flush(); sfx.fanfare(); $('hint').hidden=true;
   if(w.rainbow){ w.rainbow.visible=true; }
   /* confetti */
   const n=260, pos=new Float32Array(n*3), col=new Float32Array(n*3), c=new THREE.Color();
@@ -578,7 +617,7 @@ function updateRace(dt,inp){
   P.bumpCd-=dt;
   const before=Math.floor(P.dist/tr.L); P.dist+=P.speed*dt; const after=Math.floor(P.dist/tr.L);
   P.hopV-=32*dt; P.hopY+=P.hopV*dt; if(P.hopY<0){ P.hopY=0; P.hopV=0; }
-  if(racing){ P.idle=thr>.1?0:P.idle+dt; $('hint').hidden=P.idle<2.5; }
+  if(racing){ P.idle=thr>.1?0:P.idle+dt; const idleNow=P.idle>=CFG.hint_after_idle_seconds; if(idleNow&&$('hint').hidden) track('boredom',{k:'idle'}); $('hint').hidden=!idleNow; }
   const s=P.dist%tr.L;
 
   if(racing&&after>before){ P.lap=after; deposit(); if(P.lap>=LAPS) finishRace(); else { spawnItems(P.lap); tone(880,now(),.3,'triangle',.15); } updateHud(); }
@@ -604,7 +643,7 @@ function updateRace(dt,inp){
   /* things to collect */
   w.items.forEach((it,i)=>{ if(it.got) return;
     const d=wrapD(it.s,s,tr.L);
-    if(racing&&d>-3&&d<16) it.lat+=clamp(P.lat-it.lat,-1,1)*3.5*dt;
+    if(racing&&d>-3&&d<16) it.lat+=clamp(P.lat-it.lat,-1,1)*CFG.item_magnet*dt;
     place(tr,it.s,it.lat,v1,v2); it.obj.position.set(v1.x,.25+Math.abs(Math.sin(w.time*3+i))*.6,v1.z); it.obj.rotation.y=w.time*1.6+i;
     if(racing&&Math.abs(d)<3&&Math.abs(it.lat-P.lat)<3.3){ it.got=true; w.collected++; w.train.push({obj:it.obj,lat:P.lat}); sfx.collect(); updateHud(); }
   });
@@ -641,20 +680,43 @@ function updateRace(dt,inp){
     fin+=dt; const a=fin*.7+Math.PI, p=P.rig.root.position;
     v1.set(p.x+Math.sin(a)*13,6,p.z+Math.cos(a)*13); camera.position.lerp(v1,1-Math.exp(-2.5*dt));
     v1.set(p.x,1.6,p.z); camLook.lerp(v1,1-Math.exp(-5*dt));
-    if(fin>9) openPicker(true);
+    if(fin>CFG.celebrate_seconds) openPicker(true);
   }
   camera.lookAt(camLook);
 
   if(A.ctx){ A.eng.frequency.setTargetAtTime(55+P.speed*4.2,now(),.06); A.engGain.gain.setTargetAtTime(P.speed>1?.035:0,now(),.1); }
 }
 
+function defaultWorld(){ const on=CFG.worlds.filter(w=>w.enabled); return (on.sort((a,b)=>b.weight-a.weight)[0]||{id:'spider'}).id; }
+function showWorlds(){ const on=id=>CFG.worlds.some(w=>w.id===id&&w.enabled); $('pickSpider').hidden=!on('spider'); $('pickBed').hidden=!on('bed');
+  $('pickSpider').parentElement.style.gridTemplateColumns=on('spider')&&on('bed')?'1fr 1fr':'minmax(0,520px)'; $('pickSpider').parentElement.style.justifyContent='center'; }
+/* ---------- who's playing (tap, or tilt the stick toward a letter and hold) ---------- */
+let KIDS=[]; try{ KIDS=JSON.parse(localStorage.getItem('itsykids')||'[]'); }catch(e){}
+fetch('/api/children',{cache:'no-store'}).then(r=>r.ok?r.json():null).then(j=>{ if(j&&Array.isArray(j.children)) KIDS=j.children; }).catch(()=>{});
+const who={sel:null,fill:0}; const KCOL=['#ef5d8f','#2f9be0','#14a874','#f5a300'];
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function openWho(){
+  if(KIDS.length<2){ child=KIDS[0]?KIDS[0].id:null; return openPicker(false); }
+  state='who'; who.sel=null; who.fill=0; showTouch(false);
+  $('kids').innerHTML=KIDS.slice(0,4).map((k,i)=>`<button class="kid" type="button" data-i="${i}" style="background:${KCOL[i%4]}"><b>${esc(k.label||(k.display_name||'?')[0])}</b><span>${k.display_name&&k.display_name!==k.label?esc(k.display_name):'&nbsp;'}</span><i class="bar"></i></button>`).join('');
+  $('who').hidden=false;
+}
+function chooseKid(i){ const k=KIDS[i]; if(!k) return; child=k.id; track('child',{who:k.id}); sfx.collect(); $('who').hidden=true; openPicker(false); }
+$('kids').addEventListener('click',e=>{ const b=e.target.closest('.kid'); if(b&&state==='who') chooseKid(+b.dataset.i); });
+function updateWho(dt,inp){
+  const n=Math.min(KIDS.length,4); let sel=inp.x<-.4?0:inp.x>.4?n-1:(n>2&&inp.f>.5?1:null);
+  if(sel!==who.sel){ who.sel=sel; who.fill=0; }
+  if(sel!=null){ who.fill+=dt/1.1; if(who.fill>=1){ chooseKid(sel); return; } }
+  [...$('kids').children].forEach((el,i)=>{ el.classList.toggle('sel',i===sel); el.querySelector('.bar').style.width=(i===sel?who.fill*100:0)+'%'; });
+}
 function updatePicker(dt,inp){
-  const sel=inp.x<-.4?'spider':inp.x>.4?'bed':null;
+  const onS=!$('pickSpider').hidden, onB=!$('pickBed').hidden;
+  let sel=inp.x<-.4?'spider':inp.x>.4?'bed':null; if(sel==='spider'&&!onS) sel=onB?'bed':null; if(sel==='bed'&&!onB) sel=onS?'spider':null;
   if(sel!==pick.sel){ pick.sel=sel; pick.fill=0; }
-  if(sel){ pick.fill+=dt/1.1; pick.auto=Math.max(pick.auto,0); if(pick.fill>=1){ startRace(sel); return; } }
-  else if(pick.auto>0){ pick.auto-=dt; if(pick.auto<=0){ startRace(lastWorld); return; } }
+  if(sel){ pick.fill+=dt/1.1; pick.auto=Math.max(pick.auto,0); if(pick.fill>=1){ startRace(sel,'stick'); return; } }
+  else if(pick.auto>0){ pick.auto-=dt; if(pick.auto<=0){ startRace(CFG.worlds.some(w=>w.id===lastWorld&&w.enabled)?lastWorld:defaultWorld(),'auto'); return; } }
   [['spider','pickSpider'],['bed','pickBed']].forEach(p=>{ const el=$(p[1]); let f=sel===p[0]?pick.fill:0;
-    if(!sel&&pick.auto>0&&lastWorld===p[0]) f=1-pick.auto/9;
+    if(!sel&&pick.auto>0&&lastWorld===p[0]) f=1-pick.auto/CFG.auto_pick_seconds;
     el.classList.toggle('sel',sel===p[0]); el.querySelector('.bar').style.width=(f*100)+'%'; });
   if(A.ctx) A.engGain.gain.setTargetAtTime(0,now(),.1);
 }
@@ -664,10 +726,10 @@ function goFullscreen(){ const el=document.documentElement; try{ const p=el.requ
 $('startBtn').addEventListener('click',()=>{
   initAudio(); goFullscreen();
   try{ if(navigator.wakeLock) navigator.wakeLock.request('screen').catch(()=>{}); }catch(e){}
-  $('setup').hidden=true; $('leave').hidden=false; openPicker(false);
+  $('setup').hidden=true; $('leave').hidden=false; track('session'); openWho();
 });
-$('pickSpider').addEventListener('click',()=>{ if(state==='pick') startRace('spider'); });
-$('pickBed').addEventListener('click',()=>{ if(state==='pick') startRace('bed'); });
+$('pickSpider').addEventListener('click',()=>{ if(state==='pick') startRace('spider','tap'); });
+$('pickBed').addEventListener('click',()=>{ if(state==='pick') startRace('bed','tap'); });
 $('fsBtn').addEventListener('click',goFullscreen);
 function fsCheck(){ $('fsBtn').hidden=state==='setup'||!!document.fullscreenElement||!document.documentElement.requestFullscreen; setTimeout(resize,60); }
 document.addEventListener('fullscreenchange',fsCheck);
@@ -695,7 +757,7 @@ function showTouch(on){ if(!isTouch) return; $('stick').hidden=!on; $('horn').hi
 {
   const b=$('leave'); let t=null;
   const stop=()=>{ clearTimeout(t); b.classList.remove('holding'); };
-  b.addEventListener('pointerdown',e=>{ e.preventDefault(); b.classList.add('holding'); t=setTimeout(()=>{ location.href='/'; },1500); });
+  b.addEventListener('pointerdown',e=>{ e.preventDefault(); b.classList.add('holding'); t=setTimeout(()=>{ closeWorld('leave'); flush().finally(()=>{ location.href='/'; }); },1500); });
   ['pointerup','pointerleave','pointercancel'].forEach(ev=>b.addEventListener(ev,stop));
 }
 if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js').catch(()=>{}); }catch(e){} }
@@ -714,12 +776,13 @@ function frame(t){
     return;
   }
   if(inp.honk) sfx.honk();
+  if(state==='who'){ updateWho(dt,inp); return; }
   if(state==='pick') updatePicker(dt,inp); else updateRace(dt,inp);
   if($('fsBtn').hidden===(!document.fullscreenElement&&!!document.documentElement.requestFullscreen)) fsCheck();
   if(W) renderer.render(W.scene,camera);
 }
 requestAnimationFrame(frame);
-window._kart={start:startRace,world:()=>W,touch,get state(){return state}};
+window._kart={start:startRace,world:()=>W,touch,flush,get state(){return state},get queue(){return Q},get cfg(){return CFG},setCfg:applyCfg};
 })();
 </script>
 

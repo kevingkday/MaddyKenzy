@@ -17,8 +17,12 @@ const bad = hosts.filter(h => !allowed.includes(h));
 if (bad.length) fail('index.html talks to outside hosts: ' + [...new Set(bad)].join(', '));
 for (const w of ['XMLHttpRequest', 'WebSocket', 'sendBeacon', 'MediaRecorder', 'eval(', 'new Function']) if (html.includes(w)) fail('index.html uses ' + w);
 const fetches = [...html.matchAll(/fetch\(\s*['"`]([^'"`]+)/g)].map(m => m[1]).concat([...html.matchAll(/grown\('([^']+)'/g)].map(m => m[1]));
-if (fetches.some(f => !['/api/log', 'game.json', '/api/config?game=', '/api/children', '/api/status?game=', '/api/review', '/api/notes', '/api/apply', '/api/dismiss', '/api/undo', '/audio/${CFG.voice}/${k}.mp3', '/api/device/link'].includes(f))) fail('unexpected fetch: ' + fetches.join(', '));
-for (const must of ['data-hold="home"', 'openGrown', 'timerMin', 'holdify']) if (!html.includes(must)) fail('safety feature removed: ' + must);
+if (fetches.some(f => !['/api/log', 'game.json', '/api/config?game=', '/api/children', '/api/status?game=', '/api/review', '/api/notes', '/api/apply', '/api/dismiss', '/api/undo', '/audio/${CFG.voice}/${k}.mp3', '/api/device/link', '/api/config?game=', '/api/children'].includes(f))) fail('unexpected fetch: ' + fetches.join(', '));
+const MUST = {
+  'itsy-big-show': ['data-hold="home"', 'openGrown', 'timerMin', 'holdify'],
+  'itsy-sleepy-kart': ['id="leave"', "location.href='/'", 'id="stick"', 'track(']
+};
+for (const must of MUST[GAME] || []) if (!html.includes(must)) fail('safety feature removed: ' + must);
 if (!html.includes(`/*CFG*/${JSON.stringify(cfg)}/*END*/`)) fail(`built-in config out of sync; run node scripts/sync-cfg.mjs ${GAME}`);
 
 // 2. it actually runs on an iPad-sized screen
@@ -31,10 +35,39 @@ const server = http.createServer((req, res) => {
   res.writeHead(200, { 'content-type': types[path.extname(f)] || 'application/octet-stream' }); fs.createReadStream(f).pipe(res);
 }).listen(0);
 const url = `http://127.0.0.1:${server.address().port}/games/${GAME}/index.html`;
-const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || undefined, args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream', '--autoplay-policy=no-user-gesture-required'] });
+const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || undefined, args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream', '--autoplay-policy=no-user-gesture-required', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
 const errors = [];
-try {
+// the kart: starts, picks a world, drives with the keyboard and with the touch stick, honours its config
+async function kartChecks() {
   for (const vp of [{ width: 1180, height: 820 }, { width: 820, height: 1180 }]) {
+    const page = await browser.newPage({ viewport: vp, hasTouch: true });
+    page.on('pageerror', e => errors.push(`${vp.width}: ${e.message}`));
+    await page.route(/fonts\.(googleapis|gstatic)\.com/, r => r.abort());
+    await page.goto(url); await page.waitForTimeout(1200);
+    if (await page.isVisible('#oops')) fail('kart could not start 3D');
+    await page.click('#startBtn'); await page.waitForTimeout(600);
+    if (!(await page.isVisible('#picker'))) fail('world picker did not appear');
+    const worlds = cfg.worlds.filter(w => w.enabled).map(w => w.id === 'spider' ? '#pickSpider' : '#pickBed');
+    await page.click(worlds[0]); await page.waitForTimeout(1200);
+    if ((await page.evaluate(() => window._kart.state)) !== 'race') fail('race did not start');
+    const d0 = await page.evaluate(() => window._kart.world().P.dist);
+    await page.keyboard.down('ArrowUp'); await page.waitForTimeout(1500); await page.keyboard.up('ArrowUp');
+    const d1 = await page.evaluate(() => window._kart.world().P.dist);
+    if (!(d1 > d0 + 5)) fail('kart did not drive');
+    const sp = await page.evaluate(() => window._kart.world().P.speed);
+    if (sp > cfg.max_speed + 1) fail('speed above max_speed');
+    const laps = await page.$$eval('#laps span', e => e.length);
+    if (laps !== cfg.laps) fail(`laps HUD shows ${laps}, config says ${cfg.laps}`);
+    const q = await page.evaluate(() => window._kart.queue.map(e => e.e));
+    for (const e of ['session', 'open', 'pick']) if (!q.includes(e)) fail('play tracking missing event ' + e);
+    const wide = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 2);
+    if (wide) fail(`page wider than screen at ${vp.width}px`);
+    await page.close();
+  }
+}
+try {
+  if (GAME === 'itsy-sleepy-kart') await kartChecks();
+  else for (const vp of [{ width: 1180, height: 820 }, { width: 820, height: 1180 }]) {
     const page = await browser.newPage({ viewport: vp, hasTouch: true });
     page.on('pageerror', e => errors.push(`${vp.width}: ${e.message}`));
     await page.route(/fonts\.(googleapis|gstatic)\.com/, r => r.abort());

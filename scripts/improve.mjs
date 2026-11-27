@@ -24,7 +24,7 @@ if (ctx.new_since_last < MIN_NEW_EVENTS && !process.env.FORCE) {
 const { system, user, summary } = reviewPrompt(ctx, GAME);
 const reply = await callClaude(claudeOpts(), system, user);
 const next = reply.config;
-const errs = validate(next || {}, ctx.config);
+const errs = validate(next || {}, ctx.config, GAME);
 if (errs.length) throw new Error('Rejected config: ' + errs.join('; '));
 next.version = ctx.active_version + 1; // display only; the server assigns the real number
 

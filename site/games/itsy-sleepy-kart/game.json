@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "max_speed": 34,
+  "laps": 3,
+  "items_per_lap": 5,
+  "item_magnet": 3.5,
+  "friend_speed": 23,
+  "hint_after_idle_seconds": 2.5,
+  "auto_pick_seconds": 9,
+  "celebrate_seconds": 9,
+  "worlds": [
+    {"id": "spider", "title": "Rainy Garden", "enabled": true, "weight": 1},
+    {"id": "bed", "title": "Sleepy Road", "enabled": true, "weight": 1}
+  ]
+}

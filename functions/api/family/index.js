@@ -6,6 +6,9 @@ import { json, sessionUser, randomToken, sha256 } from '../../../lib/server.js';
 import { familyKey, newDek, lockWithMaster, masterReady, enc, dec, b64 } from '../../../lib/crypto.js';
 import { STARTER_PLAYBOOK, STARTER_SYSTEM, starterPrompt, validate, callClaude } from '../../../lib/review.js';
 import itsyDefault from '../../../site/games/itsy-big-show/game.json';
+import kartDefault from '../../../site/games/itsy-sleepy-kart/game.json';
+// every family gets every game; Itsy's Big Show is tailored from the parent's notes at sign-up, the others start standard
+const MORE_GAMES = { 'itsy-sleepy-kart': kartDefault };
 
 export async function onRequestGet({ request, env }) {
   const u = await sessionUser(request, env);
@@ -53,7 +56,7 @@ export async function onRequestPost({ request, env }) {
   try {
     if (env.ANTHROPIC_API_KEY || env.MOCK_CLAUDE_STARTER) {
       const reply = await callClaude({ apiKey: env.ANTHROPIC_API_KEY, model: env.MODEL, mock: env.MOCK_CLAUDE_STARTER }, STARTER_SYSTEM, starterPrompt(form, itsyDefault, 'itsy-big-show'), 8000);
-      if (reply.config && !validate(reply.config, itsyDefault).length) { config = reply.config; notes = String(reply.notes_for_parent || ''); changelog = String(reply.changelog || 'Tailored starter').slice(0, 200); }
+      if (reply.config && !validate(reply.config, itsyDefault, 'itsy-big-show').length) { config = reply.config; notes = String(reply.notes_for_parent || ''); changelog = String(reply.changelog || 'Tailored starter').slice(0, 200); }
     }
   } catch { /* keep the starter */ }
   config.version = 1;
@@ -69,11 +72,16 @@ export async function onRequestPost({ request, env }) {
       .bind(family, await enc(key, STARTER_PLAYBOOK), await enc(key, 'Starter playbook before any results.'), now),
     env.DB.prepare('UPDATE users SET family_id = ? WHERE id = ?').bind(family, u.id)
   ];
+  for (const [game, def] of Object.entries(MORE_GAMES)) stmts.push(
+    env.DB.prepare('INSERT INTO family_games (family_id, game_id, active_version, last_review_at) VALUES (?, ?, 1, ?)').bind(family, game, now),
+    env.DB.prepare("INSERT INTO game_versions (family_id, game_id, version, config_json, changelog, created_by, status, applied_at) VALUES (?, ?, 1, ?, 'Starter version', 'seed', 'live', ?)").bind(family, game, JSON.stringify({ ...def, version: 1 }), now),
+    env.DB.prepare("INSERT INTO playbooks (family_id, game_id, version, content, rationale, status, evidence, applied_at) VALUES (?, ?, 1, ?, ?, 'live', 0, ?)").bind(family, game, await enc(key, STARTER_PLAYBOOK), await enc(key, 'Starter playbook before any results.'), now));
   for (const k of kids) {
     const label = String(k.label || String(k.name).trim()[0] || '★').slice(0, 4);
     stmts.push(env.DB.prepare('INSERT INTO children (id, family_id, display_name, profile_private, label, age) VALUES (?,?,?,?,?,?)')
       .bind('c_' + randomToken(9).replace(/[^A-Za-z0-9]/g, '').slice(0, 10), family, await enc(key, String(k.name).trim().slice(0, 40)), await enc(key, String(k.profile || '').slice(0, 2000) || null), label, Number(k.age) || null));
   }
+  stmts.unshift(env.DB.prepare("INSERT OR IGNORE INTO games (id, title) VALUES ('itsy-big-show', 'Itsy''s Big Show'), ('itsy-sleepy-kart', 'Itsy & Sleepy Kart')"));
   await env.DB.batch(stmts);
   return json({ ok: true, family, notes });
 }

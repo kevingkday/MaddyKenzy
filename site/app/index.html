@@ -61,7 +61,10 @@ details summary{cursor:pointer;font-weight:600}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
 {
-const $=s=>document.querySelector(s), main=$('#main'), GAME='itsy-big-show';
+const $=s=>document.querySelector(s), main=$('#main');
+let GAME='itsy-big-show', GAMES=[{slug:'itsy-big-show',title:"Itsy's Big Show"}];
+fetch('/games.json').then(r=>r.json()).then(g=>{if(Array.isArray(g)&&g.length){GAMES=g;tabs()}}).catch(()=>{});
+function tabs(){const el=$('#gameTabs');if(!el)return;el.innerHTML=GAMES.map(g=>`<button class="${g.slug===GAME?'':'soft'}" data-game="${esc(g.slug)}">${esc(g.title)}</button>`).join('');const pl=$('#playLink');if(pl)pl.href=`/games/${GAME}/`}
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 async function api(path,body,method){
  const r=await fetch(path,{method:method||(body?'POST':'GET'),headers:{'content-type':'application/json'},body:body?JSON.stringify(body):undefined,credentials:'same-origin'});
@@ -138,7 +141,8 @@ async function dashboard(){
  main.innerHTML=`
  <div class="card"><h2>${esc(name)}</h2><div>${kids.map((k,i)=>`<div class="row" style="margin:6px 0"><span class="dot" style="background:${COL[i%4]}">${esc(k.label)}</span><span><b>${esc(k.name)}</b>${k.age?`, ${k.age}`:''}</span></div>`).join('')}</div>
   <p style="margin:10px 0 0"><span class="badge">${f.private_mode?'🔒 Private mode: locked with your passphrase':'🔐 Encrypted with your family key'}</span></p>
-  <div class="row" style="margin-top:12px"><a class="btn" href="/games/${GAME}/">▶ Play the game here</a></div></div>
+  <div class="row" style="margin-top:12px"><a class="btn" id="playLink" href="/games/${GAME}/">▶ Play the game here</a></div></div>
+ <div class="card"><h2>Your games</h2><p class="hint" style="margin:0 0 10px">Each game learns separately. Pick one to see its suggestions, notes and scorecard.</p><div class="row" id="gameTabs"></div></div>
  <div class="card"><h2>Suggestions & notes</h2><div id="notes">Loading…</div>
   <div class="row" style="margin-top:12px"><button class="soft" id="review">🔍 Review recent play</button><button class="soft" id="undo">↩ Undo last change</button></div><p class="status" id="nst"></p></div>
  <div class="card"><h2>How it's learning</h2><div id="learn"></div><div class="row" style="margin-top:12px"><button class="soft" id="rethink">🧠 Rethink the playbook now</button></div><p class="status" id="lst"></p></div>
@@ -155,7 +159,7 @@ async function dashboard(){
  $('#out').onclick=async()=>{await api('/api/auth/logout',{});location.replace('/app/')};
  if($('#invite'))$('#invite').onclick=async()=>{const j=await api('/api/auth/link',{kind:'invite'});$('#inviteOut').innerHTML=`<p>Send this to the family (works once, for 14 days):</p><p class="hint" style="word-break:break-all">${esc(j.url)}</p><button class="soft" id="cp2">Copy link</button>`;$('#cp2').onclick=()=>navigator.clipboard.writeText(j.url).then(()=>$('#cp2').textContent='Copied')};
  $('#delBtn').onclick=async()=>{try{await api('/api/family',{confirm:$('#del').value.trim()},'DELETE');main.innerHTML='<div class="card"><h2>Deleted</h2><p>Everything about your family has been erased.</p></div>'}catch(e){alertIn('#delBtn',e.message)}};
- notes();
+ tabs();notes();
 }
 function alertIn(sel,m){const p=document.createElement('p');p.className='err';p.textContent=m;$(sel).after(p)}
 function unlock(){
@@ -178,7 +182,8 @@ async function notes(){
    +(j.playbook?`<details><summary>Current playbook (v${j.playbook.version})</summary><div class="pre" style="margin-top:6px">${esc(j.playbook.content)}</div></details>`:'');
  }catch(e){$('#notes').innerHTML=`<p class="err">${esc(e.message)}</p>`}
 }
-main.addEventListener('click',async e=>{const b=e.target.closest('[data-a]');if(!b)return;b.disabled=true;
+main.addEventListener('click',async e=>{const t=e.target.closest('[data-game]');if(t){GAME=t.dataset.game;tabs();$('#nst').textContent='';$('#lst').textContent='';$('#notes').textContent='Loading…';return notes()}
+ const b=e.target.closest('[data-a]');if(!b)return;b.disabled=true;
  try{await api(`/api/${b.dataset.a}`,{game:GAME,version:+b.dataset.v,kind:b.dataset.kind});$(b.dataset.kind?'#lst':'#nst').textContent=b.dataset.a==='apply'?(b.dataset.kind?'Claude will follow the new playbook from the next review.':`Applied. The kids' devices load version ${b.dataset.v} next time they open the game.`):'Okay, nothing changed.';notes()}
  catch(err){b.disabled=false;$(b.dataset.kind?'#lst':'#nst').textContent=err.message}});
 async function startReview(kind,stSel){

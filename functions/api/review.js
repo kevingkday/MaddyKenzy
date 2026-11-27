@@ -37,7 +37,7 @@ export async function onRequestPost({ request, env }) {
     if (ctx.new_since_last < 5) return end('no_change', `Not enough new play to review yet (${ctx.new_since_last} new events, need 5).`);
     const { system, user, summary } = reviewPrompt(ctx, game);
     const reply = await callClaude({ ...opts, mock: env.MOCK_CLAUDE_REVIEW }, system, user);
-    const errs = validate(reply.config || {}, ctx.config);
+    const errs = validate(reply.config || {}, ctx.config, game);
     if (errs.length) return end('failed', 'The suggestion did not pass its checks, so nothing changed.');
     const version = await saveProposal(env, family, game, key, { config: reply.config, changelog: String(reply.changelog || 'Tuned the game').slice(0, 200), notes: String(reply.notes_for_parent || ''),
       stats: { sessions: summary.sessions, medianSessionMinutes: summary.medianSessionMinutes, byVersion: summary.byVersion }, upTo: ctx.upTo, run });

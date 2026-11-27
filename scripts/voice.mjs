@@ -13,6 +13,7 @@ const FAMILY = process.env.FAMILY, GAME = process.env.GAME || 'itsy-big-show', M
 const MAX = +(process.env.MAX_CLIPS || 800), KEY = process.env.ELEVENLABS_API_KEY;
 const MODEL = process.env.ELEVENLABS_MODEL || 'eleven_multilingual_v2';
 if (!/^[A-Za-z0-9_-]{1,40}$/.test(FAMILY || '')) throw new Error('FAMILY required');
+if (!(await import('../lib/briefs.js')).SPEAKS[GAME]) { console.log(`${GAME} has no spoken lines; skipping voice clips.`); process.exit(0); }
 if (!KEY) { console.log('No ELEVENLABS_API_KEY; skipping voice clips.'); process.exit(0); }
 
 const site = process.env.SITE_URL.replace(/\/$/, ''), auth = { authorization: `Bearer ${process.env.INTERNAL_TOKEN}` };
