@@ -15,7 +15,7 @@
 <body>
 <header class="top"><div class="wrap">
  <a class="logo" href="/"><svg viewBox="0 0 120 120" aria-hidden="true"><g fill="none" stroke="#ffd23f" stroke-width="7" stroke-linecap="round"><path d="M36 64Q16 46 6 58"/><path d="M33 72Q10 66 3 80"/><path d="M34 81Q13 88 9 104"/><path d="M84 64Q104 46 114 58"/><path d="M87 72Q110 66 117 80"/><path d="M86 81Q107 88 111 104"/></g><ellipse cx="60" cy="72" rx="31" ry="27" fill="#8b66e6"/><circle cx="48" cy="66" r="10" fill="#fff"/><circle cx="72" cy="66" r="10" fill="#fff"/><circle cx="50" cy="68" r="5.5" fill="#1d1540"/><circle cx="74" cy="68" r="5.5" fill="#1d1540"/></svg>Maddy &amp; Kenzy's Games</a>
- <nav class="nav" aria-label="Sections"><a href="#games">Games</a><a href="#learns">How it learns</a><a href="#voice">Voice</a><a href="#install">No app store</a><a href="#privacy">Privacy</a><a class="parents" href="/app/">Parents</a></nav>
+ <nav class="nav" aria-label="Sections"><a href="#games">Games</a><a href="#learns">How it learns</a><a href="#voice">Voice</a><a href="#install">No app store</a><a href="#privacy">Privacy</a><a href="#beta">Beta</a><a class="parents" href="/app/">Parents</a></nav>
 </div></header>
 
 <main>
@@ -43,6 +43,7 @@
   </article>
  </div>
  <ul class="facts"><li><b>Nightly</b> reviews by Claude</li><li><b>Every change</b> approved by a parent</li><li><b>Measured</b> before and after</li><li><b>No app store</b>: installs from the browser</li></ul>
+ <p class="betanudge">Want this for your kids? <a href="#beta">Join the beta list →</a></p>
 </div></section>
 
 <section class="band" id="what"><div class="wrap row2">
@@ -177,11 +178,35 @@
  </ul>
  <p style="margin-top:22px">The full source is public: <a href="https://github.com/kevingkday/MaddyKenzy">github.com/kevingkday/MaddyKenzy</a>. Families in the invite-only beta sign in at the <a href="/app/">parent dashboard</a>.</p>
 </div></section>
+<section class="band beta" id="beta"><div class="wrap">
+ <p class="kicker">Beta</p>
+ <h2>Want a game that learns your kid?</h2>
+ <p class="lead">A small invite-only beta is coming for other families: tell it about your child, and it builds a starter game and keeps tuning it to how they play. Leave your email and you'll hear when there's a spot. Nothing else, no newsletter.</p>
+ <form id="betaForm" class="betaform" novalidate>
+  <label class="sr" for="betaEmail">Email</label>
+  <input id="betaEmail" name="email" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com" required maxlength="254">
+  <input class="hp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+  <button class="btn play" type="submit">Join the beta</button>
+ </form>
+ <p id="betaMsg" class="betamsg" role="status" aria-live="polite"></p>
+ <p class="hint">Your address is stored encrypted and used only to invite you. Ask and it's deleted.</p>
+</div></section>
 </main>
 
 <footer class="site"><div class="wrap">
  <span>Made with love for Maddy &amp; Kenzy · no ads · works offline</span>
  <span><a href="/about/itsy-big-show/">Itsy's Big Show</a> · <a href="/about/itsy-sleepy-kart/">Itsy &amp; Sleepy Kart</a> · <a href="/app/">Parents</a> · <a href="https://github.com/kevingkday/MaddyKenzy">Source</a></span>
 </div></footer>
+<script>
+(()=>{const f=document.getElementById('betaForm'),m=document.getElementById('betaMsg'),b=f.querySelector('button');
+f.addEventListener('submit',async e=>{e.preventDefault();const email=f.email.value.trim();
+ if(!/^\S+@\S+\.\S{2,}$/.test(email)){m.className='betamsg err';m.textContent='Please enter a valid email address.';f.email.focus();return}
+ b.disabled=true;m.className='betamsg';m.textContent='Sending…';
+ try{const r=await fetch('/api/beta',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({email,website:f.website.value})});const j=await r.json().catch(()=>({}));
+  if(r.ok){m.className='betamsg ok';m.textContent=j.already?"You're already on the list. Thanks!":"You're on the list. Thanks! We'll email you when a spot opens.";f.reset()}
+  else{m.className='betamsg err';m.textContent=j.error||'Something went wrong. Please try again.'}}
+ catch{m.className='betamsg err';m.textContent='No connection. Please try again.'}
+ b.disabled=false})})();
+</script>
 </body>
 </html>

@@ -135,3 +135,14 @@ footer.site{background:var(--night);color:#d6d0f5;padding:40px 0;font-size:15px}
 footer.site .wrap{display:flex;flex-wrap:wrap;gap:12px 28px;justify-content:space-between;align-items:center}
 footer.site a{color:#fff}
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important;animation:none!important}}
+
+/* beta sign-up */
+.betanudge{margin:22px 0 0;font-weight:700}.betanudge a{color:var(--sun)}
+.beta{background:var(--night);color:#fff}.beta .lead{color:#d6d0f5;max-width:640px}.beta .hint{color:#b9b0e6;font-size:14px}
+.betaform{display:flex;flex-wrap:wrap;gap:12px;margin-top:22px;max-width:560px}
+.betaform input[type=email]{flex:1 1 260px;min-height:52px;padding:12px 18px;border-radius:999px;border:2px solid #fff3;background:#fff;color:#1b1440;font:700 17px Nunito,sans-serif}
+.betaform input:focus-visible{outline:3px solid var(--sun);outline-offset:2px}
+.betaform .btn{min-height:52px}.betaform .btn:disabled{opacity:.6}
+.hp{position:absolute;left:-9999px;width:1px;height:1px;opacity:0}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.betamsg{min-height:1.4em;margin:12px 0 0;font-weight:800}.betamsg.ok{color:var(--sun)}.betamsg.err{color:#ffb3cb}

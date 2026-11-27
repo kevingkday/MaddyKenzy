@@ -113,3 +113,13 @@ The reviewer may only change config values its game brief lists, and may not rem
 
 ## Adding a game
 Put it in `site/games/<id>/` with a `game.json`, the same `track()` calls and grown-ups screen as Itsy's Big Show, and an `improvers/<id>.md` brief. Add it to `site/games.json` and insert a `games` row.
+
+## Beta sign-ups
+
+The homepage has an email-only beta list (`POST /api/beta`). Addresses are stored encrypted (a key derived from `MASTER_KEY`), deduped with a keyed hash, rate-limited per IP, and listed for the admin in the parent dashboard.
+
+Optional email alert for each new sign-up, through Cloudflare Email Service (free when sending to a verified address on your own account):
+
+1. Cloudflare → Email Service → Email Routing: turn it on for your domain, and add and verify your own address under Destination addresses.
+2. Create an API token with **Email Sending: Edit**.
+3. Add to the Pages project: `NOTIFY_EMAIL` (your verified address), `CF_EMAIL_TOKEN` (secret), `CF_ACCOUNT_ID`, and optionally `NOTIFY_FROM` (defaults to `beta@<your domain>`).

@@ -145,3 +145,14 @@ CREATE TABLE IF NOT EXISTS playbooks (            -- the reviewer's own rules, r
 CREATE TABLE IF NOT EXISTS users (id TEXT PRIMARY KEY, family_id TEXT REFERENCES families(id), role TEXT NOT NULL DEFAULT 'parent', created_at INTEGER NOT NULL DEFAULT (unixepoch()));
 CREATE TABLE IF NOT EXISTS sessions (token_hash TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES users(id), expires_at INTEGER NOT NULL, created_at INTEGER NOT NULL DEFAULT (unixepoch()));
 CREATE TABLE IF NOT EXISTS links (token_hash TEXT PRIMARY KEY, kind TEXT NOT NULL, user_id TEXT, family_id TEXT, created_by TEXT, expires_at INTEGER NOT NULL, used_at INTEGER, created_at INTEGER NOT NULL DEFAULT (unixepoch()));
+-- Beta interest list (email only). The address is encrypted with a key derived from MASTER_KEY;
+-- email_hash is a keyed hash (HMAC) used only to spot repeats.
+CREATE TABLE IF NOT EXISTS beta_signups (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  email_enc   TEXT NOT NULL,
+  email_hash  TEXT NOT NULL UNIQUE,
+  ip_hash     TEXT,
+  notified    INTEGER NOT NULL DEFAULT 0,
+  created_at  INTEGER NOT NULL DEFAULT (unixepoch())
+);
+CREATE INDEX IF NOT EXISTS beta_ip ON beta_signups(ip_hash, created_at);
